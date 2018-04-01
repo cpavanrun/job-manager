@@ -6,12 +6,6 @@
   width: 100%;
 }
 
-.query-input {
-  width: 18rem;
-  margin-left: 1rem;
-  margin-right: 1rem;
-}
-
 .search-button {
   margin-right: 3rem;
 }
@@ -25,4 +19,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.chipShell {
+  width: fit-content !important;
+  height: fit-content !important;
+  margin-right: 0 !important;
+  padding: 0 !important;
 }
