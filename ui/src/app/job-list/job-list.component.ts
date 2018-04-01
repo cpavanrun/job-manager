@@ -100,6 +100,7 @@ export class JobListComponent implements OnInit {
         this.jobStream = nextStream;
         this.header.resetPagination();
         this.streamSubscription = this.jobStream.subscribe(this.jobs);
+        nextStream.loadAtLeast(600).then(() => { nextStream.loadAtLeast(600); });
         this.loading = false;
       })
       .catch(error => this.handleError(error));
