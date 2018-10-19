@@ -4,7 +4,7 @@ WORKDIR /job-manager
 
 ADD ./ /job-manager
 
-RUN /bin/bash -c scripts/rebuild_swagger.sh
+RUN /bin/bash -c ../scripts/rebuild_swagger.sh
 
 FROM node
 
