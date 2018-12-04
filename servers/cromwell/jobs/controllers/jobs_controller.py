@@ -75,6 +75,23 @@ def update_job_labels(id, body, **kwargs):
 
 
 @requires_auth
+def resume_job(id):
+    """
+    Switch a job's status from On Hold to Submitted by API Job ID
+
+    :param id: Job ID
+
+    :rtype: None
+    """
+    url = '{cromwell_url}/{id}/releaseHold'.format(
+        cromwell_url=_get_base_url(), id=id)
+    response = requests.post(
+        url, auth=kwargs.get('auth'), headers=kwargs.get('auth_headers'))
+    if response.status_code == NotFound.code:
+        raise NotFound(response.json()['message'])
+
+
+@requires_auth
 def get_job(id, **kwargs):
     """
     Query for job and task-level metadata for a specified job

@@ -56,6 +56,31 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Jobs
+  '/jobs/{id}/resume':
+    post:
+      operationId: ResumeJob
+      summary: Switch a job's status from On Hold to Submitted by ID
+      parameters:
+        - name: id
+          description: Job ID
+          required: true
+          type: string
+          in: path
+      responses:
+        '200':
+          description: Success
+        '400':
+          $ref: '#/responses/BadRequest'
+        '401':
+          $ref: '#/responses/Unauthorized'
+        '404':
+          $ref: '#/responses/NotFound'
+        '412':
+          $ref: '#/responses/JobTerminal'
+        '500':
+          $ref: '#/responses/ServerError'
+      tags:
+        - Jobs
   '/jobs/{id}/updateLabels':
     post:
       operationId: UpdateJobLabels

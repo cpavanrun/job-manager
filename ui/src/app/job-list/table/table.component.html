@@ -58,6 +58,12 @@
                   <span>Abort job</span>
                 </a>
               </mat-list-item>
+              <mat-list-item *ngIf="canResume(j)">
+                <a (click)="resumeJob(j)">
+                  <clr-icon shape="refresh" size="24"></clr-icon>
+                  <span>Resume job</span>
+                </a>
+              </mat-list-item>
               <mat-list-item *ngIf="hasTimingUrl(j)">
                 <a href="{{ j.extensions.timingUrl }}" target="_blank">
                   <clr-icon shape="hourglass" size="24"></clr-icon>
@@ -151,6 +157,12 @@
           (click)="onAbortJobs()"
           [disabled]="!canAbortAnySelected()">
     Abort Jobs
+  </button>
+  <button mat-raised-button color="accent"
+          class="group-button group-resume"
+          (click)="onResumeJobs()"
+          [disabled]="!canResumeAnySelected()">
+    Resume Jobs
   </button>
   <button mat-raised-button color="accent"
           class="group-button group-update-label"

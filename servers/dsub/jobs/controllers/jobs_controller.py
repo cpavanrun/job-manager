@@ -68,6 +68,18 @@ def update_job_labels(id, body):
     raise NotImplemented('Label updates not supported by dsub.')
 
 
+def resume_job(id):
+    """Switch a job's status from On Hold to Submitted by API Job ID.
+
+    Args:
+        id (str): Job ID to be released from On Hold status
+
+    Returns:
+        None - never actually returned
+    """
+    raise NotImplemented('On Hold status not supported by dsub.')
+
+
 def get_job(id):
     """Get a job's metadata by API Job ID.
     Args:

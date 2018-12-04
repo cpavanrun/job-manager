@@ -97,6 +97,19 @@ export class JobsTableComponent implements OnInit {
     return job.status == JobStatus.Submitted || job.status == JobStatus.Running;
   }
 
+  resumeJob(job: QueryJobsResult) {
+    this.jobManagerService.resumeJob(job.id)
+      .then(() => {
+        job.status = JobStatus.Submitted;
+        this.onJobsChanged.emit([job]);
+      })
+      .catch((error) => this.handleError(error));
+  }
+
+  canResume(job: QueryJobsResult): boolean {
+    return job.status == JobStatus.OnHold;
+  }
+
   canEdit(df: DisplayField): boolean {
     return df.editable;
   }
@@ -126,6 +139,15 @@ export class JobsTableComponent implements OnInit {
   canAbortAnySelected(): boolean {
     for (let j of this.selection.selected) {
       if (this.canAbort(j)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  canResumeAnySelected(): boolean {
+    for (let j of this.selection.selected) {
+      if (this.canResume(j)) {
         return true;
       }
     }
@@ -198,7 +220,7 @@ export class JobsTableComponent implements OnInit {
         viewContainerRef: this.viewContainer,
       });
     for (let job of selected) {
-      if (job.status == JobStatus.Running || job.status == JobStatus.Submitted) {
+      if (this.canAbort(job)) {
         aborts.push(
           this.jobManagerService.abortJob(job.id)
             .then(() => { job.status = JobStatus.Aborted; })
@@ -214,6 +236,38 @@ export class JobsTableComponent implements OnInit {
         if (numErrs) {
           const countMsg = numErrs < aborts.length ? `${numErrs} of ${aborts.length}` : 'all';
           this.handleErrorMessage(`Failed to abort ${countMsg} requested jobs`);
+        }
+        this.onJobsChanged.emit(selected)
+      });
+  }
+
+  onResumeJobs(): void {
+    const resumes: Promise<void>[] = [];
+    const selected = this.selection.selected.slice();
+
+    let numErrs = 0;
+    const ref = this.snackBar.open(
+      'Resuming jobs...', /* action */ '',
+      {
+        viewContainerRef: this.viewContainer,
+      });
+    for (let job of selected) {
+      if (this.canResume(job)) {
+        resumes.push(
+          this.jobManagerService.resumeJob(job.id)
+            .then(() => { job.status = JobStatus.Submitted; })
+            .catch(() => { numErrs++; }));
+      }
+    }
+    // We catch failed resumes above so that Promise.all() waits for everything
+    // to finish (the default behavior is to short-circuit fail on the first
+    // failure).
+    Promise.all(resumes)
+      .then(() => {
+        ref.dismiss();
+        if (numErrs) {
+          const countMsg = numErrs < resumes.length ? `${numErrs} of ${resumes.length}` : 'all';
+          this.handleErrorMessage(`Failed to resume ${countMsg} requested jobs`);
         }
         this.onJobsChanged.emit(selected)
       });

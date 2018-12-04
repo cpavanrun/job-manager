@@ -114,6 +114,16 @@ export class JobManagerService {
       .catch((e) => this.handleError(e));
   }
 
+  resumeJob(id: string): Promise<void> {
+    const apiUrl = this.configLoader.getEnvironmentConfigSynchronous()['apiUrl'];
+    return this.http.post(`${apiUrl}/jobs/${id}/resume`,
+      {},
+      new RequestOptions({headers: this.getHttpHeaders()}))
+      .toPromise()
+      .then(response => response.status == 200)
+      .catch((e) => this.handleError(e));
+  }
+
   updateJobLabels(id: string, req: UpdateJobLabelsRequest): Promise<UpdateJobLabelsResponse> {
     const apiUrl = this.configLoader.getEnvironmentConfigSynchronous()['apiUrl'];
     return this.http.post(`${apiUrl}/jobs/${id}/updateLabels`,
