@@ -53,6 +53,7 @@ export class JobsTableComponent implements OnInit {
   public readonly labelCharLimit = 255;
 
   displayedColumns: string[];
+  firstColumn: string;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -114,6 +115,10 @@ export class JobsTableComponent implements OnInit {
     return df.editable;
   }
 
+  canFilterBy(fieldName: string): boolean {
+    return this.displayFields.filter( df => (fieldName == df.field) && df.filterable).length > 0;
+  }
+
   setFieldValue(job: QueryJobsResult, displayField: string, value: string) {
     let fieldItems = {};
     fieldItems[displayField] = value;
@@ -130,7 +135,8 @@ export class JobsTableComponent implements OnInit {
       .catch((error) => this.handleError(error));
   }
 
-  filterOnFieldValue(field: string, value: string) {
+  filterOnColumnValue(column: string, value: string) {
+    const field = this.getFilterFromField(column);
     if (field && value) {
       this.onFiltersChanged.emit([field, value]);
     }
@@ -174,6 +180,18 @@ export class JobsTableComponent implements OnInit {
     return df.field == "status";
   }
 
+  isFirstColumn(df: DisplayField): boolean {
+    return df.field == this.firstColumn;
+  }
+
+  isSimpleField(df: DisplayField): boolean {
+    return !this.isStatusField(df) && !this.canEdit(df) && !this.isFirstColumn(df) && !this.canFilterBy(df.field);
+  }
+
+  shouldShowMenu(job: QueryJobsResult, df: DisplayField): boolean {
+    return !this.isFirstColumn(df) && (this.canEdit(df) || (this.canFilterBy(df.field) && this.getFieldValue(job, df)));
+  }
+
   getFieldValue(job: QueryJobsResult, df: DisplayField): any {
     // Handle nested fields, separated by '.', i.e. extensions.userId
     let fields = df.field.split(".");
@@ -194,11 +212,21 @@ export class JobsTableComponent implements OnInit {
   }
 
   getFieldType(df: DisplayField): string {
-    return df.fieldType.toString();
+    if (df && df.fieldType) {
+      return df.fieldType.toString();
+    }
+    return 'text';
   }
 
   getFieldOptions(df: DisplayField): string[] {
     return df.validFieldValues;
+  }
+
+  getFilterFromField(field: string): string {
+    const filter = this.displayFields.filter( df => (field == df.field) && df.filterable).pop();
+    if (filter) {
+      return filter.field.split('.').pop();
+    }
   }
 
   getQueryParams(): Params {
@@ -362,8 +390,9 @@ export class JobsTableComponent implements OnInit {
   }
 
   // set up fields to display as columns and bulk update-able labels for job list table
+  // add in "Details" column after the first non-checkbox column for job details menu
   public setUpFieldsAndColumns() {
-    this.displayedColumns = ["Checkbox", "Name", "Details"];
+    this.displayedColumns = ["Checkbox"];
     this.bulkLabelFields = [];
     for (let displayField of this.displayFields) {
       if (displayField.primary) {
@@ -373,6 +402,8 @@ export class JobsTableComponent implements OnInit {
         this.bulkLabelFields.push({'displayField' : displayField, 'default' : null});
       }
     }
+    this.displayedColumns.splice(2, 0, "Details");
+    this.firstColumn = this.displayedColumns[1];
   }
 
   private prepareUpdateJobLabelsRequest (fieldValues: {}): UpdateJobLabelsRequest {

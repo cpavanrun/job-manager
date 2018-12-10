@@ -55,11 +55,18 @@ Thin shim around [`cromwell`](https://github.com/broadinstitute/cromwell).
     - Make more columns to be popped up by the query builder
   - Add a `capabilities_config.json` file to `job-manager/servers/cromwell/jobs` to override the pre-defined configurations.
   - The `capabilities_config.json` should **strictly** follow the following structure:
-  - Both `editable` and `bulkEditable` will be treated as `false` unless explicitly set to `true`
-    - And if the field is `editable`, then `fieldType` is required.
 ```json
 {
   "displayFields": [
+    {
+      "field": "id",
+      "display": "Workflow ID"
+    },
+    {
+      "field": "name",
+      "display": "Name",
+      "filterable": true
+    },
     {
       "field": "status",
       "display": "Status"
@@ -69,8 +76,11 @@ Thin shim around [`cromwell`](https://github.com/broadinstitute/cromwell).
       "display": "Submitted"
     },
     {
-      "field": "labels.cromwell-workflow-id",
-      "display": "Workflow ID"
+      "field": "labels.label",
+      "display": "Label",
+      "fieldType": "text",
+      "editable": true,
+      "bulkEditable": true
     },
     {
       "field": "labels.flag",
@@ -84,11 +94,69 @@ Thin shim around [`cromwell`](https://github.com/broadinstitute/cromwell).
       ]
     },
     {
+      "field": "labels.comment",
+      "display": "Comment",
+      "fieldType": "text",
+      "editable": true
+    }
+  ],
+  "commonLabels": [
+    "id",
+    "name",
+    "label",
+    "comment",
+    "flag"
+  ],
+  "queryExtensions": [
+    "hideArchived"
+  ]
+}
+```
+  - For the `displayFields`, which represent the columns that will be available in the job list view:
+    - The order that the fields are listed in will be the order in which they appear
+    - Both `editable`, `bulkEditable` and `filterable` will be treated as `false` unless explicitly set to `true`
+        - If the field is `editable`, then `fieldType` is required.
+        - If the field is `editable`, then `filterable` will be ignored.
+
+- (Required, CaaS only) Configure fields to display
+  - **Note:** If you want to use use Job Manager against Cromwell-as-a-Service, which is using SAM/Google OAuth for authZ/authN, the `capabilities_config.json` must also include some extra fields, as well as proper scopes, which are shown as below:
+```json
+{
+  "displayFields": [
+    {
+      "field": "id",
+      "display": "Workflow ID"
+    },
+    {
+      "field": "name",
+      "display": "Name",
+      "filterable": true
+    },
+    {
+      "field": "status",
+      "display": "Status"
+    },
+    {
+      "field": "submission",
+      "display": "Submitted"
+    },
+    {
       "field": "labels.label",
       "display": "Label",
       "fieldType": "text",
       "editable": true,
       "bulkEditable": true
+    },
+    {
+      "field": "labels.flag",
+      "display": "Flag",
+      "editable": true,
+      "bulkEditable": true,
+      "fieldType": "list",
+      "validFieldValues": [
+        "archive",
+        "follow-up"
+      ]
     },
     {
       "field": "labels.comment",
@@ -98,76 +166,25 @@ Thin shim around [`cromwell`](https://github.com/broadinstitute/cromwell).
     }
   ],
   "commonLabels": [
-    "cromwell-workflow-id",
-    "workflow-name",
+    "id",
+    "name",
     "label",
     "comment",
     "flag"
   ],
-  "queryExtensions": []
+  "queryExtensions": [
+    "hideArchived"
+  ],
+  "authentication": {
+    "isRequired": true,
+    "scopes": [
+      "openid",
+      "email",
+      "profile"
+    ]
+  }
 }
 ```
-
-- (Required, CaaS only) Configure fields to display
-  - **Note:** If you want to use use Job Manager against Cromwell-as-a-Service, which is using SAM/Google OAuth for authZ/authN, the `capabilities_config.json` must also include some extra fields, as well as proper scopes, which are shown as below:
- ```json
- {
-   "displayFields": [
-     {
-       "field": "status",
-       "display": "Status"
-     },
-     {
-       "field": "submission",
-       "display": "Submitted"
-     },
-     {
-       "field": "labels.cromwell-workflow-id",
-       "display": "Workflow ID"
-     },
-     {
-       "field": "labels.flag",
-       "display": "Flag",
-       "editable": true,
-       "bulkEditable": true,
-       "fieldType": "list",
-       "validFieldValues": [
-         "archive",
-         "follow-up"
-       ]
-     },
-     {
-       "field": "labels.label",
-       "display": "Label",
-       "fieldType": "text",
-       "editable": true,
-       "bulkEditable": true
-     },
-     {
-       "field": "labels.comment",
-       "display": "Comment",
-       "fieldType": "text",
-       "editable": true
-     }
-   ],
-   "commonLabels": [
-     "cromwell-workflow-id",
-     "workflow-name",
-     "flag",
-     "label",
-     "comment"
-   ],
-   "queryExtensions": [],
-   "authentication": {
-       "isRequired": true, 
-       "scopes": [
-         "openid", 
-         "email", 
-         "profile"
-       ]
-    }
- }
- ```
 
 - Link docker compose
   - **Note:** You may have completed this already if following the Job Manager [Development instructions](../../README.md#Development)
