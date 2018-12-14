@@ -75,7 +75,7 @@ def update_job_labels(id, body, **kwargs):
 
 
 @requires_auth
-def resume_job(id):
+def resume_job(id, **kwargs):
     """
     Switch a job's status from On Hold to Submitted by API Job ID
 

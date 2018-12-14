@@ -99,6 +99,7 @@
   height: auto;
   margin: 1rem 0;
   padding-left: 0;
+  cursor: pointer;
 }
 
 ::ng-deep .mat-menu-panel.details-menu .mat-card {
