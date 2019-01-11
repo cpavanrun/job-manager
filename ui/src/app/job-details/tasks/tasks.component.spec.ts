@@ -13,7 +13,6 @@ import {
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
 
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
-import {JobFailuresComponent} from "../failures/failures.component";
 import {JobFailuresTableComponent} from "../common/failures-table/failures-table.component";
 import {JobMetadataResponse} from '../../shared/model/JobMetadataResponse';
 import {JobStatus} from '../../shared/model/JobStatus';
@@ -53,7 +52,6 @@ describe('TaskDetailsComponent', () => {
     TestBed.configureTestingModule({
       declarations: [
         TaskDetailsComponent,
-        JobFailuresComponent,
         JobFailuresTableComponent,
         TestTasksComponent
       ],
@@ -89,8 +87,8 @@ describe('TaskDetailsComponent', () => {
     let de: DebugElement = fixture.debugElement;
     expect(de.query(By.css('.title-link')).nativeElement.textContent)
       .toContain(task.name);
-    expect(de.query(By.css('.title-link')).nativeElement.href)
-      .toContain('/jobs/' + task.jobId);
+    expect(de.queryAll(By.css('a.title-link')).length)
+      .toEqual(1);
     expect(de.query(By.css('.mat-column-status clr-icon')).attributes['shape'])
       .toContain('error');
     expect(de.queryAll(By.css('.mat-column-startTime'))[1].nativeElement.textContent)

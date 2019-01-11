@@ -12,8 +12,8 @@ import {
   MatTabsModule,
   MatTooltipModule,
 } from '@angular/material';
+import {RouterModule} from '@angular/router';
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
-
 import {JobDetailsComponent} from './job-details.component';
 import {JobPanelsComponent} from './panels/panels.component';
 import {JobResourcesComponent} from './resources/resources.component';
@@ -21,7 +21,6 @@ import {JobResourcesTableComponent} from './resources/resources-table/resources-
 import {SharedModule} from '../shared/shared.module';
 import {TaskDetailsComponent} from './tasks/tasks.component';
 import {GcsService} from '../core/gcs.service';
-import {JobFailuresComponent} from './failures/failures.component';
 import {JobFailuresTableComponent} from './common/failures-table/failures-table.component';
 
 
@@ -40,6 +39,7 @@ import {JobFailuresTableComponent} from './common/failures-table/failures-table.
     MatTableModule,
     MatTabsModule,
     MatTooltipModule,
+    RouterModule,
     SharedModule,
   ],
   declarations: [
@@ -48,7 +48,6 @@ import {JobFailuresTableComponent} from './common/failures-table/failures-table.
     JobResourcesComponent,
     JobResourcesTableComponent,
     TaskDetailsComponent,
-    JobFailuresComponent,
     JobFailuresTableComponent,
   ],
   providers: [
