@@ -16,12 +16,13 @@ import {
 } from '@angular/material';
 import {RouterTestingModule} from '@angular/router/testing';
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
+import {Ng2GoogleChartsModule} from 'ng2-google-charts';
 
 import {JobDetailsComponent} from "./job-details.component"
 import {JobPanelsComponent} from './panels/panels.component';
 import {JobResourcesComponent} from './resources/resources.component';
 import {JobResourcesTableComponent} from './resources/resources-table/resources-table.component';
-import {TaskDetailsComponent} from './tasks/tasks.component';
+import {JobTabsComponent} from "./tabs/tabs.component";
 import {JobManagerService} from '../core/job-manager.service';
 import {JobDetailsResolver} from './job-details-resolver.service';
 import {FakeJobManagerService} from '../testing/fake-job-manager.service';
@@ -31,6 +32,7 @@ import {URLSearchParamsUtils} from '../shared/utils/url-search-params.utils';
 import {JobStatus} from "../shared/model/JobStatus";
 import {JobMetadataResponse} from '../shared/model/JobMetadataResponse';
 import {JobFailuresTableComponent} from "./common/failures-table/failures-table.component";
+import {JobTimingDiagramComponent} from "./tabs/timing-diagram/timing-diagram.component";
 
 describe('JobDetailsComponent', () => {
 
@@ -62,7 +64,8 @@ describe('JobDetailsComponent', () => {
         JobPanelsComponent,
         JobResourcesComponent,
         JobResourcesTableComponent,
-        TaskDetailsComponent,
+        JobTabsComponent,
+        JobTimingDiagramComponent,
       ],
       imports: [
         ClrIconModule,
@@ -79,6 +82,7 @@ describe('JobDetailsComponent', () => {
         MatTooltipModule,
         SharedModule,
         BrowserAnimationsModule,
+        Ng2GoogleChartsModule,
         RouterTestingModule.withRoutes([
           {
             path: 'jobs/:id',

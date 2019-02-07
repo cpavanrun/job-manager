@@ -52,12 +52,6 @@
                   <span>Resume job</span>
                 </a>
               </mat-list-item>
-              <mat-list-item *ngIf="hasTimingUrl(j)">
-                <a href="{{ j.extensions.timingUrl }}" target="_blank">
-                  <clr-icon shape="hourglass" size="24"></clr-icon>
-                  <span>Timing Diagram</span>
-                </a>
-              </mat-list-item>
               <mat-list-item *ngIf="j[firstColumn] && canFilterBy(firstColumn)">
                 <clr-tooltip>
                   <a (click)="filterOnColumnValue(firstColumn, j[firstColumn])" clrTooltipTrigger class="inline-filter">
@@ -134,6 +128,9 @@
           <a *ngIf="isFirstColumn(df)" class="field-value job-details-button mat-body-1"
              [routerLink]="[j.id]"
              [queryParams]="getQueryParams()">{{ getFieldValue(j, df) }}</a>
+        </div>
+        <div class="display-field" *ngIf="getFieldType(df) == 'date'">
+          <jm-datetime [datetime]="getFieldValue(j, df)"></jm-datetime>
         </div>
         <div class="display-field" *ngIf="isSimpleField(df)">{{ getFieldValue(j, df) }}</div>
         <clr-tooltip *ngIf=isStatusField(df)>

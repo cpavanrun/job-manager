@@ -26,6 +26,7 @@ import {
   PageEvent,
 } from '@angular/material';
 
+import {AuthService} from '../../core/auth.service';
 import {CapabilitiesService} from '../../core/capabilities.service';
 import {URLSearchParamsUtils} from '../utils/url-search-params.utils';
 import {JobStatus} from '../model/JobStatus';
@@ -71,6 +72,7 @@ export class HeaderComponent implements OnInit, AfterViewInit, AfterViewChecked,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly capabilitiesService: CapabilitiesService,
+    private readonly authService: AuthService,
     private readonly settingsService: SettingsService,
     private zone: NgZone,
     private cdr: ChangeDetectorRef,
@@ -272,6 +274,19 @@ export class HeaderComponent implements OnInit, AfterViewInit, AfterViewChecked,
     this.onDisplayFieldsChanged.emit(this.displayFields);
   }
 
+  isSignedIn(): boolean {
+    return !!this.authService.userId;
+  }
+
+  signOut(): void {
+    this.authService.signOut().then(() => {
+      this.router.navigate(
+        ['/sign_in']
+      );
+    });
+  }
+
+
   private refreshChips(query: string): void {
     this.zone.run(() => this.chips = URLSearchParamsUtils.getChips(query));
   }
@@ -297,11 +312,7 @@ export class JobsPaginatorIntl extends MatPaginatorIntl {
               public changes: Subject<void>) {
     super();
     backendJobs.subscribe((jobList: JobListView) => {
-      // Ensure that the paginator component is redrawn once we transition to an
-      // exhaustive list of jobs.
-      if (jobList.exhaustive) {
         changes.next();
-      }
     });
   }
 

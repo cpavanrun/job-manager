@@ -5,6 +5,8 @@ from __future__ import absolute_import
 import requests_mock
 from flask import json
 from datetime import datetime
+from dateutil.tz import *
+import dateutil.parser
 from . import BaseTestCase
 
 from jobs.models.extended_fields import ExtendedFields
@@ -81,7 +83,7 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Succeeded'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
@@ -155,7 +157,7 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Succeeded'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
@@ -344,7 +346,7 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Succeeded'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
@@ -420,8 +422,7 @@ class TestJobsController(BaseTestCase):
                     'returnCode': return_code,
                     'attempts': attempts,
                     'jobId': subworkflow_id
-                }],
-                'timingUrl': "https://test-cromwell.org/id/timing"
+                }]
             },
             'failures': []
         }  # yapf: disable
@@ -438,7 +439,7 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Failed'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
@@ -560,8 +561,7 @@ class TestJobsController(BaseTestCase):
                         'count': 2,
                         'status': 'Failed'
                     }]
-                }],
-                'timingUrl': "https://test-cromwell.org/id/timing"
+                }]
             }
         }  # yapf: disable
         self.assertDictEqual(response_data, expected_data)
@@ -705,7 +705,7 @@ class TestJobsController(BaseTestCase):
             'start': time,
             'end': time
         }
-        formatted_time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%fZ')
+        formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
         result = QueryJobsResult(
             id=job.get('id'),
             name=job.get('name'),
@@ -713,8 +713,7 @@ class TestJobsController(BaseTestCase):
             submission=formatted_time,
             start=formatted_time,
             end=formatted_time,
-            extensions=ExtendedFields(
-                timing_url='https://test-cromwell.org/12345/timing'))
+            extensions=ExtendedFields())
         self.assertEqual(
             jobs_controller.format_job(job, formatted_time), result)
 
@@ -727,7 +726,7 @@ class TestJobsController(BaseTestCase):
             'start': time,
             'end': time
         }
-        formatted_time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
+        formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
         result = QueryJobsResult(
             id=job.get('id'),
             name=job.get('name'),
@@ -735,23 +734,21 @@ class TestJobsController(BaseTestCase):
             submission=formatted_time,
             start=formatted_time,
             end=formatted_time,
-            extensions=ExtendedFields(
-                timing_url='https://test-cromwell.org/12345/timing'))
+            extensions=ExtendedFields())
         self.assertEqual(
             jobs_controller.format_job(job, formatted_time), result)
 
     def test_format_job_with_no_start_date(self):
         time = '2017-10-27T18:04:47Z'
         job = {'id': '12345', 'name': 'TestJob', 'status': 'Failed'}
-        formatted_time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
+        formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
         result = QueryJobsResult(
             id=job.get('id'),
             name=job.get('name'),
             status=job.get('status'),
             start=formatted_time,
             submission=formatted_time,
-            extensions=ExtendedFields(
-                timing_url='https://test-cromwell.org/12345/timing'))
+            extensions=ExtendedFields())
         self.assertEqual(
             jobs_controller.format_job(job, formatted_time), result)
 
@@ -763,7 +760,7 @@ class TestJobsController(BaseTestCase):
             'status': 'Failed',
             'start': time
         }
-        formatted_time = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
+        formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
         result = QueryJobsResult(
             id=job.get('id'),
             name=job.get('name'),
@@ -771,8 +768,7 @@ class TestJobsController(BaseTestCase):
             submission=formatted_time,
             start=formatted_time,
             end=None,
-            extensions=ExtendedFields(
-                timing_url='https://test-cromwell.org/12345/timing'))
+            extensions=ExtendedFields())
         self.assertEqual(
             jobs_controller.format_job(job, formatted_time), result)
 

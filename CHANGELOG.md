@@ -5,6 +5,49 @@
 ### Added the ability to start jobs that are 'on hold.'
 This is for Cromwell only, and it must be Cromwell version 37 or higher.
 
+## v0.5.6 Release Notes
+
+### Embedded timing diagram within UI
+
+Timing diagram is now rendered in the UI using the job metadata and displayed as one of the tabs in the Job Details page.
+
+### Updated display of dates/times in Job List and Details
+
+Dates/times for the current day, the current year and all others are displayed uniquely. Full date and time (including seconds) are displayed in tooltip on mouseover.
+
+## v0.5.5 Release Notes
+
+### Fixed bug where total results were not being updated in the job list paginator
+
+### Changed `health` endpoint to not need authentication
+
+## v0.5.4 Release Notes
+
+### Added Sign out button to Job List.
+
+Button will log user out via Google Auth (`gapi.auth2`).
+
+## v0.5.3 Release Notes
+
+### Health check endpoint for APIs
+
+Cromwell API will now return 503 if it cannot reach the Cromwell service.
+
+## v0.5.2 Release Notes
+
+### Add a button to clear the query builder chips
+
+This will not clear the `projectId` chip.
+
+### Clarified Job Details
+
+The job status is now clearly displayed in text and icon on the `Status` card; scattered task status will more accurately represented.
+
+### Re-organized Job Details
+
+The job `Inputs` and `Outputs` have been moved from the `Resources` panel to the tabbed panel.  The `Errors` panel has been converted to a card and displays the first four errors more succinctly.  Added an icon to allow navigation from child job to the parent job.
+>>>>>>> master
+
 ## v0.5.1 Release Notes
 
 ### Made the `name` and `id` columns in the job list more configurable

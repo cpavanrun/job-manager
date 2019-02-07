@@ -11,17 +11,19 @@ import {
   MatTooltipModule,
 } from '@angular/material';
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
+import {Ng2GoogleChartsModule} from 'ng2-google-charts';
 
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {JobFailuresTableComponent} from "../common/failures-table/failures-table.component";
 import {JobMetadataResponse} from '../../shared/model/JobMetadataResponse';
 import {JobStatus} from '../../shared/model/JobStatus';
 import {SharedModule} from '../../shared/shared.module';
-import {TaskDetailsComponent} from './tasks.component';
+import {JobTabsComponent} from './tabs.component';
 import {TaskMetadata} from "../../shared/model/TaskMetadata";
+import {JobResourcesTableComponent} from "../resources/resources-table/resources-table.component";
+import {JobTimingDiagramComponent} from "./timing-diagram/timing-diagram.component";
 
-
-describe('TaskDetailsComponent', () => {
+describe('JobTabsComponent', () => {
   let testComponent: TestTasksComponent;
   let fixture: ComponentFixture<TestTasksComponent>;
 
@@ -51,8 +53,10 @@ describe('TaskDetailsComponent', () => {
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
-        TaskDetailsComponent,
+        JobTabsComponent,
         JobFailuresTableComponent,
+        JobResourcesTableComponent,
+        JobTimingDiagramComponent,
         TestTasksComponent
       ],
       imports: [
@@ -66,6 +70,7 @@ describe('TaskDetailsComponent', () => {
         MatTableModule,
         MatTabsModule,
         MatTooltipModule,
+        Ng2GoogleChartsModule,
         SharedModule
       ]
     }).compileComponents();
@@ -92,7 +97,7 @@ describe('TaskDetailsComponent', () => {
     expect(de.query(By.css('.mat-column-status clr-icon')).attributes['shape'])
       .toContain('error');
     expect(de.queryAll(By.css('.mat-column-startTime'))[1].nativeElement.textContent)
-      .toContain('1:00 PM');
+      .toContain('Nov 14, 2017');
     expect(de.queryAll(By.css('.mat-column-duration'))[1].nativeElement.textContent)
       .toEqual('0h 15m');
     expect(de.queryAll(By.css('.mat-column-attempts'))[1].nativeElement.textContent)
@@ -105,11 +110,11 @@ describe('TaskDetailsComponent', () => {
 
   @Component({
     selector: 'jm-test-tasks-component',
-    template: `<jm-tasks [tasks]="job.extensions.tasks" [job]="job"></jm-tasks>`
+    template: `<jm-tabs [tasks]="job.extensions.tasks" [job]="job"></jm-tabs>`
   })
   class TestTasksComponent {
     public job = job;
-    @ViewChild(TaskDetailsComponent)
-    public taskDetailsComponent: TaskDetailsComponent;
+    @ViewChild(JobTabsComponent)
+    public jobTabsComponent: JobTabsComponent;
   }
 });

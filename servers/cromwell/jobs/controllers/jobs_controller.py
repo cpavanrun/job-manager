@@ -1,7 +1,9 @@
 import requests
 from flask import current_app
-from werkzeug.exceptions import BadRequest, NotFound, InternalServerError
+from werkzeug.exceptions import BadRequest, NotFound, InternalServerError, ServiceUnavailable
 from datetime import datetime
+from dateutil.tz import *
+import dateutil.parser
 
 from jm_utils import page_tokens
 from jobs.controllers.utils.auth import requires_auth
@@ -15,6 +17,7 @@ from jobs.models.failure_message import FailureMessage
 from jobs.models.shard_status_count import ShardStatusCount
 from jobs.models.update_job_labels_response import UpdateJobLabelsResponse
 from jobs.models.update_job_labels_request import UpdateJobLabelsRequest
+from jobs.models.health_response import HealthResponse
 from jobs.controllers.utils import job_statuses
 from jobs.controllers.utils import task_statuses
 import urllib
@@ -103,8 +106,6 @@ def get_job(id, **kwargs):
     """
     url = '{cromwell_url}/{id}/metadata'.format(
         cromwell_url=_get_base_url(), id=id)
-    timing_url = '{cromwell_url}/{id}/timing'.format(
-        cromwell_url=_get_base_url(), id=id)
     response = requests.get(
         url, auth=kwargs.get('auth'), headers=kwargs.get('auth_headers'))
     job = response.json()
@@ -146,9 +147,39 @@ def get_job(id, **kwargs):
         labels=job.get('labels'),
         failures=failures,
         extensions=ExtendedFields(
-            tasks=sorted_tasks,
-            timing_url=timing_url,
-            parent_job_id=job.get('parentWorkflowId')))
+            tasks=sorted_tasks, parent_job_id=job.get('parentWorkflowId')))
+
+
+def health(**kwargs):
+    """
+    Query for the health of the backend.
+
+    Args:
+
+    Returns:
+        HealthResponse: Health of the service and its link to its backend.
+    """
+
+    status_url = _get_base_url().split("/api/")[0] + "/engine/v1/status"
+    logger.debug("Using {} to query Cromwell status".format(status_url))
+
+    try:
+        response = requests.get(
+            status_url,
+            auth=kwargs.get('auth'),
+            headers=kwargs.get('auth_headers'))
+
+        if response.status_code != 200:
+            logger.warning(
+                "Got a non-200 status response from Cromwell status: {} ({})".
+                format(response.status_code, response.text))
+            raise ServiceUnavailable(HealthResponse(available=False))
+        else:
+            logger.info("Health check got a positive response from Cromwell!")
+            return HealthResponse(available=True)
+    except Exception:
+        logger.warning("Failed to connect to Cromwell whatsoever")
+        raise ServiceUnavailable(HealthResponse(available=False))
 
 
 def format_task(task_name, task_metadata):
@@ -224,8 +255,7 @@ def format_scattered_task(task_name, task_metadata):
     # grab attempts, path and subWorkflowId from last call
     return TaskMetadata(
         name=remove_workflow_name(task_name),
-        execution_status=task_statuses.cromwell_execution_to_api(
-            task_metadata[-1].get('executionStatus')),
+        execution_status=_get_scattered_task_status(task_metadata),
         start=minStart,
         end=maxEnd,
         attempts=task_metadata[-1].get('attempt'),
@@ -362,8 +392,6 @@ def cromwell_query_params(query, page, page_size):
 def format_job(job, now):
     start = _parse_datetime(job.get('start')) or now
     submission = _parse_datetime(job.get('submission'))
-    timing_url = '{cromwell_url}/{id}/timing'.format(
-        cromwell_url=_get_base_url(), id=job.get('id'))
     if submission is None:
         # Submission is required by the common jobs API. Submission may be missing
         # for subworkflows in which case we fallback to the workflow start time
@@ -379,24 +407,16 @@ def format_job(job, now):
         start=start,
         end=end,
         labels=job.get('labels'),
-        extensions=ExtendedFields(
-            parent_job_id=job.get('parentWorkflowId'), timing_url=timing_url))
+        extensions=ExtendedFields(parent_job_id=job.get('parentWorkflowId')))
 
 
 def _parse_datetime(date_string):
-    # Handles issue where some dates in cromwell do not contain milliseconds
-    # https://github.com/broadinstitute/cromwell/issues/2743
     if not date_string:
         return None
     try:
-        formatted_date = datetime.strptime(date_string,
-                                           '%Y-%m-%dT%H:%M:%S.%fZ')
+        formatted_date = dateutil.parser.parse(date_string).astimezone(tzutc())
     except ValueError:
-        try:
-            formatted_date = datetime.strptime(date_string,
-                                               '%Y-%m-%dT%H:%M:%SZ')
-        except ValueError:
-            return None
+        return None
     return formatted_date
 
 
@@ -411,3 +431,18 @@ def _format_query_labels(orig_query_labels):
     for key, val in orig_query_labels.items():
         query_labels[urllib.unquote(key)] = urllib.unquote(val)
     return query_labels
+
+
+def _get_scattered_task_status(metadata):
+    # get all shard statuses
+    statuses = {
+        task_statuses.cromwell_execution_to_api(shard.get('executionStatus'))
+        for shard in metadata
+    }
+    # return status by ranked applicability
+    for status in [
+            'Failed', 'Aborting', 'Aborted', 'Running', 'Submitted',
+            'Succeeded'
+    ]:
+        if status in statuses:
+            return status
