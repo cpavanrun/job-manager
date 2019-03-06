@@ -1,9 +1,12 @@
 import requests
 from flask import current_app
-from werkzeug.exceptions import BadRequest, NotFound, InternalServerError, ServiceUnavailable
+from werkzeug.exceptions import Unauthorized, BadRequest, NotFound, InternalServerError, ServiceUnavailable
 from datetime import datetime
 from dateutil.tz import *
 import dateutil.parser
+import json
+import logging
+import urllib
 
 from jm_utils import page_tokens
 from jobs.controllers.utils.auth import requires_auth
@@ -18,10 +21,9 @@ from jobs.models.shard_status_count import ShardStatusCount
 from jobs.models.update_job_labels_response import UpdateJobLabelsResponse
 from jobs.models.update_job_labels_request import UpdateJobLabelsRequest
 from jobs.models.health_response import HealthResponse
+from jobs.models.execution_event import ExecutionEvent
 from jobs.controllers.utils import job_statuses
 from jobs.controllers.utils import task_statuses
-import urllib
-import logging
 
 _DEFAULT_PAGE_SIZE = 64
 
@@ -69,11 +71,11 @@ def update_job_labels(id, body, **kwargs):
         headers=kwargs.get('auth_headers'))
 
     if response.status_code == InternalServerError.code:
-        raise InternalServerError(response.json().get('message'))
+        raise InternalServerError(_get_response_message(response))
     elif response.status_code == BadRequest.code:
-        raise BadRequest(response.json().get('message'))
+        raise BadRequest(_get_response_message(response))
     elif response.status_code == NotFound.code:
-        raise NotFound(response.json().get('message'))
+        raise NotFound(_get_response_message(response))
     response.raise_for_status()
 
     # Follow API spec
@@ -197,6 +199,16 @@ def format_task(task_name, task_metadata):
         call_cached = latest_attempt.get('callCaching') and (
             latest_attempt.get('callCaching').get('hit'))
 
+    execution_events = None
+    if latest_attempt.get('executionEvents'):
+        execution_events = [
+            ExecutionEvent(
+                name=event.get('description'),
+                start=_parse_datetime(event.get('startTime')),
+                end=_parse_datetime(event.get('endTime')))
+            for event in latest_attempt.get('executionEvents')
+        ]
+
     return TaskMetadata(
         name=remove_workflow_name(task_name),
         execution_id=latest_attempt.get('jobId'),
@@ -213,7 +225,8 @@ def format_task(task_name, task_metadata):
         call_root=latest_attempt.get('callRoot'),
         job_id=latest_attempt.get('subWorkflowId'),
         shard_statuses=None,
-        call_cached=call_cached)
+        call_cached=call_cached,
+        execution_events=execution_events)
 
 
 def format_failure(task_name, metadata):
@@ -316,16 +329,20 @@ def query_jobs(body, **kwargs):
         offset = page_tokens.decode_offset(query.page_token)
     page = page_from_offset(offset, query_page_size)
 
+    has_auth = headers is not None
+
     response = requests.post(
         _get_base_url() + '/query',
-        json=cromwell_query_params(query, page, query_page_size),
+        json=cromwell_query_params(query, page, query_page_size, has_auth),
         auth=auth,
         headers=headers)
 
     if response.status_code == BadRequest.code:
-        raise BadRequest(response.json().get('message'))
+        raise BadRequest(_get_response_message(response))
+    elif response.status_code == Unauthorized.code:
+        raise Unauthorized(_get_response_message(response))
     elif response.status_code == InternalServerError.code:
-        raise InternalServerError(response.json().get('message'))
+        raise InternalServerError(_get_response_message(response))
     response.raise_for_status()
 
     total_results = int(response.json()['totalResultsCount'])
@@ -358,7 +375,7 @@ def page_from_offset(offset, page_size):
     return 1 + (offset / page_size)
 
 
-def cromwell_query_params(query, page, page_size):
+def cromwell_query_params(query, page, page_size, has_auth):
     query_params = []
     if query.start:
         start = datetime.strftime(query.start, '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -387,7 +404,13 @@ def cromwell_query_params(query, page, page_size):
     query_params.append({'page': str(page)})
     query_params.append({'additionalQueryResultFields': 'parentWorkflowId'})
     query_params.append({'additionalQueryResultFields': 'labels'})
-    query_params.append({'includeSubworkflows': 'false'})
+
+    # If the query request is passing along an auth header, that means the API
+    # is sending requests to a CromIAM, not a Cromwell.  CromIAM can't retrieve
+    # subworkflows, so it's not necessary to the query (and slows things down
+    # significantly)
+    if not has_auth:
+        query_params.append({'includeSubworkflows': 'false'})
     if query.extensions and query.extensions.hide_archived:
         query_params.append({'excludeLabelAnd': 'flag:archive'})
     return query_params
@@ -450,3 +473,17 @@ def _get_scattered_task_status(metadata):
     ]:
         if status in statuses:
             return status
+
+
+def _get_response_message(response):
+    if is_jsonable(response) and response.json().get('message'):
+        return response.json().get('message')
+    return str(response)
+
+
+def is_jsonable(x):
+    try:
+        x.json()
+        return True
+    except:
+        return False
