@@ -1,5 +1,9 @@
 # Job Manager Change Log
 
+## v1.3.0 Release Notes
+
+### Changed Cromwell metadata requests to remove more unnecessary data from the API response.  Requires a version of Cromwell of 43 or higher.
+
 ## v1.2.1 Release Notes
 
 ### Added logic to avoid 500 error on Job Details page when a task does not have a start time.
