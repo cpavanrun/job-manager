@@ -11,6 +11,10 @@ import {JobMetadataResponse} from '../../shared/model/JobMetadataResponse';
 import {JobStatus} from '../../shared/model/JobStatus';
 import {JobFailuresTableComponent} from "../common/failures-table/failures-table.component";
 import {JobStatusIcon} from "../../shared/common";
+import {DisplayField} from "../../shared/model/DisplayField";
+import {JobManagerService} from "../../core/job-manager.service";
+import {MatSnackBar} from "@angular/material";
+import {ErrorMessageFormatterPipe} from "../../shared/pipes/error-message-formatter.pipe";
 
 @Component({
   selector: 'jm-panels',
@@ -25,9 +29,11 @@ export class JobPanelsComponent implements OnInit {
   ];
 
   @Input() job: JobMetadataResponse;
+  @Input() primaryLabels: DisplayField[];
   @Output() close: EventEmitter<any> = new EventEmitter();
   @Output() navUp: EventEmitter<any> = new EventEmitter();
   @ViewChild(JobFailuresTableComponent) jobFailures;
+
   labels: Array<string> = [];
   displayedExtensions: Array<string> = [];
   numSucceededTasks: number = 0;
@@ -35,6 +41,11 @@ export class JobPanelsComponent implements OnInit {
   numRunningTasks: number = 0;
   numTasks: number = 0;
   public readonly numOfErrorsToShow = 4;
+  copyIcon = 'copy-to-clipboard';
+
+  constructor(
+    private readonly snackBar: MatSnackBar,
+    private readonly jobManagerService: JobManagerService) { }
 
   ngOnInit() {
     this.setUpExtensions();
@@ -103,7 +114,51 @@ export class JobPanelsComponent implements OnInit {
     return this.job.failures && (this.job.failures.length > 0);
   }
 
+  hasPrimaryLabels(): boolean {
+    if (this.primaryLabels && this.job.labels) {
+      return this.primaryLabels.filter(label => this.job.labels.hasOwnProperty(label)).length > 0;
+    }
+    return false;
+  }
+
   getStatusIcon(status: JobStatus): string {
     return JobStatusIcon[status];
+  }
+
+  abortJob() {
+    this.jobManagerService.abortJob(this.job.id)
+      .then(() => {
+        window.location.reload();
+      })
+      .catch((error) => this.handleError(error));
+  }
+
+  canAbort(): boolean {
+    return !this.hasParent() && (this.job.status == JobStatus.Submitted || this.job.status == JobStatus.Running);
+  }
+
+  copyJobIdToClipboard(): void {
+    try {
+      const jobIdInput = document.querySelector('#job-id') as HTMLInputElement;
+      jobIdInput.select();
+      document.execCommand('copy');
+      this.changeCopyIcon('check');
+    } catch (error) {
+      this.changeCopyIcon('times');
+      console.log(error);
+    }
+  }
+
+  changeCopyIcon(newIcon: string): void {
+    this.copyIcon = newIcon;
+    setTimeout(() => {
+      this.copyIcon ='copy-to-clipboard';
+    }, 1500);
+  }
+
+  handleError(error: any) {
+    this.snackBar.open(
+      new ErrorMessageFormatterPipe().transform(error),
+      'Dismiss');
   }
 }

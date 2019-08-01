@@ -15,6 +15,7 @@ enum: &TIMEFRAME
   - DAYS_7
   - DAYS_30
   - ALL_TIME
+
 paths:
   '/capabilities':
     get:
@@ -31,6 +32,7 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Capabilities
+
   '/jobs/{id}/abort':
     post:
       operationId: AbortJob
@@ -56,6 +58,7 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Jobs
+
   '/jobs/{id}/resume':
     post:
       operationId: ResumeJob
@@ -81,6 +84,7 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Jobs
+
   '/jobs/{id}/updateLabels':
     post:
       operationId: UpdateJobLabels
@@ -111,6 +115,7 @@ paths:
           description: Server does not implement this method.
       tags:
         - Jobs
+
   '/jobs/query':
     post:
       # TODO(calbach): Parameterize sort ordering.
@@ -137,6 +142,7 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Jobs
+
   '/jobs/{id}':
     get:
       operationId: GetJob
@@ -162,6 +168,100 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Jobs
+
+  '/jobs/{id}/{task}/attempts':
+    get:
+      operationId: GetTaskAttempts
+      summary: Query for task-level metadata for a specified job
+      parameters:
+        - name: id
+          description: Job ID
+          required: true
+          type: string
+          in: path
+        - name: task
+          description: task name
+          required: true
+          type: string
+          in: path
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/JobAttemptsResponse'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '401':
+          $ref: '#/responses/Unauthorized'
+        '404':
+          $ref: '#/responses/NotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      tags:
+        - Jobs
+
+  '/jobs/{id}/{task}/{index}/attempts':
+    get:
+      operationId: GetShardAttempts
+      summary: Query for shard-level metadata for a specified job
+      parameters:
+        - name: id
+          description: Job ID
+          required: true
+          type: string
+          in: path
+        - name: task
+          description: task name
+          required: true
+          type: string
+          in: path
+        - name: index
+          description: shard index
+          required: true
+          type: string
+          in: path
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/JobAttemptsResponse'
+        '400':
+          $ref: '#/responses/BadRequest'
+        '401':
+          $ref: '#/responses/Unauthorized'
+        '404':
+          $ref: '#/responses/NotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      tags:
+        - Jobs
+
+  '/jobs/operationDetails':
+    get:
+      operationId: GetOperationDetails
+      summary: Call for operation details from the Google Pipelines API
+      parameters:
+        - name: job
+          description: job ID
+          required: true
+          in: query
+          type: string
+        - name: operation
+          description: operation ID
+          type: string
+          in: query
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/JobOperationResponse'
+        '404':
+          $ref: '#/responses/NotFound'
+        '500':
+          $ref: '#/responses/ServerError'
+      tags:
+        - Jobs
+
   '/aggregations':
     get:
       operationId: GetJobAggregations
@@ -192,6 +292,7 @@ paths:
           $ref: '#/responses/ServerError'
       tags:
         - Aggregation
+
   '/health':
     get:
       operationId: Health
@@ -219,6 +320,19 @@ definitions:
         description: OAuth 2.0 requested scopes
         items:
           type: string
+      forcedLogoutDomains:
+        type: array
+        description: Domains where a forced logout will happen after an interval of inactivity has passed.
+        items:
+          type: string
+      forcedLogoutTime:
+        type: integer
+        description: Number of milliseconds for the interval of inactivity.
+      outsideAuth:
+        type: boolean
+        description: Whether or not to use an outside service for some auth-related functionality.
+        default: false
+
   DisplayField:
     description: Description of a display field
     required:
@@ -255,6 +369,7 @@ definitions:
           this field in a name:value way.
         type: boolean
         default: false
+
   CapabilitiesResponse:
     description: Specification of the backend's capabilities
     properties:
@@ -285,6 +400,7 @@ definitions:
         description: Time frames supported by the /aggregations endpoint.
         items:
           $ref: '#/definitions/TimeFrame'
+
   JobMetadataResponse:
     description: Job and task level metadata
     required:
@@ -327,6 +443,16 @@ definitions:
           $ref: '#/definitions/FailureMessage'
       extensions:
         $ref: '#/definitions/ExtendedFields'
+
+  JobOperationResponse:
+    description: Google Pipelines API provided details about an operation
+    properties:
+      details:
+        type: string
+      id:
+        type: string
+        description: operation ID
+
   UpdateJobLabelsRequest:
     description: Update labels on a job
     properties:
@@ -336,12 +462,14 @@ definitions:
           Labels to be merged into the existing job labels. Overwrites the label
           values for all given keys. Existing labels on the job which are not
           referenced in this request are left unmodified.
+
   UpdateJobLabelsResponse:
     description: Response to an update labels request
     properties:
       labels:
         type: object
         description: All job labels, after the update has been applied.
+
   AggregationResponse:
     description: Jobs aggregated by label and status within the specified time frame.
     properties:
@@ -351,6 +479,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Aggregation'
+
   Aggregation:
     description: Aggregation of jobs by statuses for a given label, within a specified time frame.
     properties:
@@ -362,6 +491,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/AggregationEntry'
+
   AggregationEntry:
     description: An aggregation entry for a given label value.
     properties:
@@ -370,6 +500,7 @@ definitions:
         type: string
       statusCounts:
         $ref: '#/definitions/StatusCounts'
+
   StatusCounts:
     description: A collection of StatusCount
     properties:
@@ -377,6 +508,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/StatusCount'
+
   StatusCount:
     description: A mapping of JobStatus to number of jobs with that status.
     properties:
@@ -384,6 +516,7 @@ definitions:
         $ref: '#/definitions/JobStatus'
       count:
         type: integer
+
   TimeFrame:
     type: string
     enum: *TIMEFRAME
@@ -423,7 +556,7 @@ definitions:
           matches to each of these labels.
       id:
         type: string
-        pattern: ^[a-zA-Z][a-zA-Z0-9_-]*$
+        pattern: ^[a-zA-Z0-9][a-zA-Z0-9_-]+$
         description: >
           Returns only jobs with the specified id.
       name:
@@ -446,6 +579,7 @@ definitions:
           of `nextPageToken` from the previous response.
       extensions:
         $ref: '#/definitions/ExtendedQueryFields'
+
   ExtendedQueryFields:
     description: >
       Extended fields to query by which may not be supported by all backends.
@@ -464,6 +598,7 @@ definitions:
         type: boolean
         description: >
           Returns only jobs that do not have the label 'flag' set to 'archive'
+
   QueryJobsResponse:
     description: Response to a job query
     required:
@@ -486,6 +621,7 @@ definitions:
           sets. Provide this value in a subsequent request to return the next
           page of results. This field will be empty if there aren't any
           additional results.
+
   # TODO(calbach): Reconcile QueryJobsResult with JobMetadata.
   QueryJobsResult:
     description: Result for an individual job returned by a job query
@@ -519,6 +655,7 @@ definitions:
         description: Custom job labels with string values
       extensions:
         $ref: '#/definitions/ExtendedFields'
+
   JobStatus:
     type: string
     enum:
@@ -529,6 +666,7 @@ definitions:
       - Failed
       - Succeeded
       - Aborted
+
   ExtendedFields:
     description: >
       Extended fields on jobs which may not be populated by all backends. See
@@ -580,6 +718,9 @@ definitions:
       inputs:
         type: object
         description: Mapping of input fully qualified names to stringified values
+      outputs:
+        type: object
+        description: Mapping of input fully qualified names to stringified values
       # TODO: Define a generalized enum for this. For details, see
       # https://github.com/DataBiosphere/job-manager/pull/14.
       executionStatus:
@@ -596,13 +737,14 @@ definitions:
       name:
         type: string
         description: The name of the job
-      executionId:
-        type: string
-        description: Backend-specific job ID
-      failures:
+      shards:
         type: array
         items:
-          $ref: '#/definitions/FailureMessage'
+          $ref: '#/definitions/Shard'
+      failureMessages:
+        type: array
+        items:
+          type: string
       returnCode:
         type: integer
         description: Task execution return code
@@ -612,22 +754,28 @@ definitions:
       stderr:
         type: string
         description: Path to the standard error file for this task
-      attempts:
-        type: integer
-        description: Number of times the task was run
+      backendLog:
+        type: string
+        description: Path to the backend log file for this task
       callRoot:
         type: string
         description: The root directory of the task execution
+      operationId:
+        type: string
+        description: Operation Id for Google Pipelines API
+      attempts:
+        type: integer
+        description: Number of times the task was run
+      attemptsData:
+        type: array
+        items:
+            $ref: '#/definitions/IndividualAttempt'
       jobId:
         type: string
         description: >
           Id of the job corresponding to this task, if this task is a nested
           child job. Expresses a child:parent relationship between this job
           and the job containing this task.
-      shardStatuses:
-        type: array
-        items:
-          $ref: '#/definitions/ShardStatusCount'
       callCached:
         type: boolean
         description: A flag to indicate if task was call-cached.
@@ -636,6 +784,112 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/ExecutionEvent'
+
+  IndividualAttempt:
+    description: The most granular collection of data for a job.
+    properties:
+      attemptNumber:
+        type: integer
+      executionStatus:
+        type: string
+        description: Backend-specific task status.
+      callCached:
+        type: boolean
+        description: A flag to indicate if task was call-cached.
+        default: false
+      stdout:
+        type: string
+        description: Path to the standard output file for this task
+      stderr:
+        type: string
+        description: Path to the standard error file for this task
+      backendLog:
+        type: string
+        description: Path to the backend log file for this task
+      callRoot:
+        type: string
+        description: The root directory of the task execution
+      operationId:
+        type: string
+        description: Operation Id for Google Pipelines API
+      inputs:
+        type: object
+        description: Mapping of input fully qualified names to stringified values
+      outputs:
+        type: object
+        description: Mapping of input fully qualified names to stringified values
+      start:
+        type: string
+        format: date-time
+        description: Start datetime of the task execution in ISO8601 format with milliseconds
+      end:
+        type: string
+        format: date-time
+        description: End datetime of the task execution in ISO8601 format with milliseconds
+      failureMessages:
+        type: array
+        items:
+          type: string
+
+  JobAttemptsResponse:
+    description: Attempts for specified task or shard
+    properties:
+      attempts:
+        type: array
+        items:
+          $ref: '#/definitions/IndividualAttempt'
+
+  Shard:
+    description: Individual shards for a scattered task or sub-workflow
+    properties:
+      executionStatus:
+        type: string
+        description: Backend-specific task status.
+      start:
+        type: string
+        format: date-time
+        description: Start datetime of the task execution in ISO8601 format with milliseconds
+      end:
+        type: string
+        format: date-time
+        description: End datetime of the task execution in ISO8601 format with milliseconds
+      shardIndex:
+        type: integer
+      stdout:
+        type: string
+        description: If from a task, path to the standard output file for this task or shard
+      stderr:
+        type: string
+        description: If from a task, path to the standard error file for this task or shard
+      backendLog:
+        type: string
+        description: If from a task, path to the backend log file for this task or shard
+      callRoot:
+        type: string
+        description: If from a task, the root directory of the task or shard execution
+      operationId:
+        type: string
+        description: Operation Id for Google Pipelines API
+      attempts:
+        type: integer
+        description: Number of times the task was run
+      failureMessages:
+        type: array
+        items:
+          type: string
+      attemptsData:
+        type: array
+        items:
+          $ref: '#/definitions/IndividualAttempt'
+      executionEvents:
+        type: array
+        items:
+          $ref: '#/definitions/ExecutionEvent'
+      jobId:
+        type: string
+        description: >
+          Id of the job corresponding to this shard, if this is a scattered sub-workflow shard
+
   FailureMessage:
     description: >
       Failure messages with optional additional information if the failure
@@ -659,9 +913,22 @@ definitions:
       stderr:
         type: string
         description: If from a task, path to the standard error file for this task or shard
+      backendLog:
+        type: string
+        description: If from a task, path to the backend log file for this task or shard
       callRoot:
         type: string
         description: If from a task, the root directory of the task or shard execution
+      operationId:
+        type: string
+        description: Operation Id for Google Pipelines API
+      jobId:
+        type: string
+        description: >
+          Id of the job corresponding to this task, if this task is a nested
+          child job. Expresses a child:parent relationship between this job
+          and the job containing this task.
+
   FieldType:
     type: string
     default: text

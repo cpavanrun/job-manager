@@ -1,0 +1,7 @@
+.details-container {
+  position: relative;
+  width: 100%;
+  top: 66px;
+  bottom: 0;
+  overflow: visible;
+}

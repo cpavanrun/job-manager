@@ -9,7 +9,8 @@ import {By} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 import {Injectable} from '@angular/core';
 import {Location} from '@angular/common';
-import {async, flush, TestBed, fakeAsync, tick} from '@angular/core/testing';
+import {async, flush, TestBed, fakeAsync, tick, ComponentFixture} from '@angular/core/testing';
+import {ClrIconModule} from '@clr/angular';
 
 import {AppComponent} from './app.component';
 import {CoreModule} from './core/core.module';
@@ -18,15 +19,28 @@ import {JobDetailsComponent} from './job-details/job-details.component';
 import {JobDetailsResolver} from './job-details/job-details-resolver.service';
 import {JobListModule} from './job-list/job-list.module';
 import {JobDetailsModule} from './job-details/job-details.module';
+import {AuthService} from "./core/auth.service";
+import {MatSnackBar} from "@angular/material";
+import {FakeCapabilitiesService} from "./testing/fake-capabilities.service";
+import {CustomIconService} from "./core/custom-icon.service";
 
 describe('AppComponent', () => {
+  let customIconService;
+  let fixture: ComponentFixture<AppComponent>;
+  let testComponent: AppComponent;
+
   beforeEach(async(() => {
+    let snackBar: MatSnackBar;
+    let fakeCapabilitiesService = new FakeCapabilitiesService({});
+    let authService = new AuthService(null, fakeCapabilitiesService, null, snackBar);
+
     TestBed.configureTestingModule({
       declarations: [
         AppComponent
       ],
       imports: [
         BrowserAnimationsModule,
+        ClrIconModule,
         CoreModule,
         JobListModule,
         JobDetailsModule,
@@ -42,20 +56,25 @@ describe('AppComponent', () => {
         ])
       ],
       providers: [
-        ErrorResolver
+        ErrorResolver,
+        {provide: AuthService, useValue: authService},
+        {provide: CustomIconService, useValue: customIconService}
       ]
     }).compileComponents();
   }));
 
+  beforeEach(() => {
+    customIconService = TestBed.get(CustomIconService);
+    fixture = TestBed.createComponent(AppComponent);
+    testComponent = fixture.componentInstance;
+  });
+
   it('should create the app', fakeAsync(() => {
-    const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
   }));
 
   it('should show an error on initial nav failure', fakeAsync(() => {
-    const fixture = TestBed.createComponent(AppComponent);
-
     const location = TestBed.get(Location);
     location.replaceState('error');
     const router: Router = TestBed.get(Router);

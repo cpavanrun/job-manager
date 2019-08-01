@@ -27,7 +27,8 @@ class TestJobsController(BaseTestCase):
             'cromwell_url': self.base_url,
             'cromwell_user': 'user',
             'cromwell_password': 'password',
-            'use_caas': False
+            'use_caas': False,
+            'capabilities': {}
         })
 
     @requests_mock.mock()
@@ -45,8 +46,8 @@ class TestJobsController(BaseTestCase):
         abort_url = self.base_url + '/{id}/abort'.format(id=workflow_id)
         mock_request.post(abort_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}/abort'.format(id=workflow_id), method='POST')
+        response = self.client.open('/jobs/{id}/abort'.format(id=workflow_id),
+                                    method='POST')
         self.assertStatus(response, 200)
 
     @requests_mock.mock()
@@ -67,8 +68,8 @@ class TestJobsController(BaseTestCase):
         abort_url = self.base_url + '/{id}/abort'.format(id=workflow_id)
         mock_request.post(abort_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}/abort'.format(id=workflow_id), method='POST')
+        response = self.client.open('/jobs/{id}/abort'.format(id=workflow_id),
+                                    method='POST')
         self.assertStatus(response, 404)
 
     @requests_mock.mock()
@@ -83,13 +84,11 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Succeeded'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
         }
         labels = {}
-        job_id = 'operations/abcde'
         std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
         std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
         attempts = 1
@@ -107,7 +106,6 @@ class TestJobsController(BaseTestCase):
                 'status': status,
                 'calls': {
                     'test.analysis': [{
-                        'jobId': job_id,
                         'executionStatus': 'Done',
                         'start': timestamp,
                         'end': timestamp,
@@ -115,6 +113,7 @@ class TestJobsController(BaseTestCase):
                         'stdout': std_out,
                         'returnCode': return_code,
                         'inputs': inputs,
+                        'outputs': outputs,
                         'attempt': attempts
                     }]
                 },
@@ -124,10 +123,15 @@ class TestJobsController(BaseTestCase):
                 'submission': timestamp,
                 'end': timestamp,
                 'start': timestamp,
-                'failures': [{
-                    'causedBy': [],
-                    'message': 'Task test.analysis failed'
-                }]
+                'failures': [
+                    {'causedBy': [
+                        {
+                            'causedBy': [],
+                            'message': 'Task test.analysis failed'
+                        }
+                    ],
+                    'message': 'Workflow failed'}
+                ]
             }  # yapf: disable
 
         update_label_url = self.base_url + '/{id}/labels'.format(
@@ -157,7 +161,6 @@ class TestJobsController(BaseTestCase):
         workflow_name = 'test'
         status = 'Succeeded'
         timestamp = '2017-11-08T05:06:41.424Z'
-        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
         inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
         outputs = {
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
@@ -166,7 +169,6 @@ class TestJobsController(BaseTestCase):
             "existing_test_label1": "existing_test_label_value1",
             "existing_test_label2": "existing_test_label_value2"
         }
-        job_id = 'operations/abcde'
         std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
         std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
         attempts = 1
@@ -190,7 +192,6 @@ class TestJobsController(BaseTestCase):
                 'status': status,
                 'calls': {
                     'test.analysis': [{
-                        'jobId': job_id,
                         'executionStatus': 'Done',
                         'start': timestamp,
                         'end': timestamp,
@@ -207,10 +208,15 @@ class TestJobsController(BaseTestCase):
                 'submission': timestamp,
                 'end': timestamp,
                 'start': timestamp,
-                'failures': [{
-                    'causedBy': [],
-                    'message': 'Task test.analysis failed'
-                }]
+                'failures': [
+                    {'causedBy': [
+                        {
+                            'causedBy': [],
+                            'message': 'Task test.analysis failed'
+                        }
+                    ],
+                        'message': 'Workflow failed'}
+                ]
             }  # yapf: disable
 
         update_label_url = self.base_url + '/{id}/labels'.format(
@@ -352,7 +358,6 @@ class TestJobsController(BaseTestCase):
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
         }
         labels = {'cromwell-workflow-id': 'cromwell-12345'}
-        job_id = 'operations/abcde'
         std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
         std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
         attempts = 1
@@ -366,7 +371,6 @@ class TestJobsController(BaseTestCase):
                 'status': status,
                 'calls': {
                     'test.analysis': [{
-                        'jobId': job_id,
                         'executionStatus': 'Done',
                         'shardIndex': -1,
                         'start': timestamp,
@@ -375,6 +379,7 @@ class TestJobsController(BaseTestCase):
                         'stdout': std_out,
                         'returnCode': return_code,
                         'inputs': inputs,
+                        'outputs': outputs,
                         'attempt': attempts,
                         'subWorkflowId': subworkflow_id
                     }]
@@ -385,17 +390,22 @@ class TestJobsController(BaseTestCase):
                 'submission': timestamp,
                 'end': timestamp,
                 'start': timestamp,
-                'failures': [{
-                    'causedBy': [],
-                    'message': 'Task test.analysis failed'
-                }]
+                'failures': [
+                    {'causedBy': [
+                        {
+                            'causedBy': [],
+                            'message': 'Task test.analysis failed'
+                        }
+                    ],
+                        'message': 'Workflow failed'}
+                ]
             }  # yapf: disable
 
         cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
         mock_request.get(cromwell_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}'.format(id=workflow_id), method='GET')
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
         self.assertStatus(response, 200)
         response_data = json.loads(response.data)
         expected_data = {
@@ -411,7 +421,6 @@ class TestJobsController(BaseTestCase):
             'extensions':{
                 'tasks': [{
                     'name': 'analysis',
-                    'executionId': job_id,
                     'executionStatus': 'Succeeded',
                     'start': response_timestamp,
                     'end': response_timestamp,
@@ -419,12 +428,85 @@ class TestJobsController(BaseTestCase):
                     'stdout': std_out,
                     'callCached': False,
                     'inputs': jobs_controller.update_key_names(inputs),
+                    'outputs': jobs_controller.update_key_names(outputs),
                     'returnCode': return_code,
                     'attempts': attempts,
                     'jobId': subworkflow_id
                 }]
             },
-            'failures': []
+            'failures': [{
+                'failure': 'Workflow failed (Caused by [reason 1 of 1]: Task test.analysis failed)',
+                'taskName': 'Workflow Error'
+            }]
+        }  # yapf: disable
+        self.assertDictEqual(response_data, expected_data)
+
+    @requests_mock.mock()
+    def test_short_workflow_failure_content(self, mock_request):
+        """
+        Test case for get_job
+
+        Parsing should succeed even if the failure content is one-level deep.
+        """
+        workflow_id = 'id'
+        subworkflow_id = 'subworkflow_id'
+        workflow_name = 'test'
+        status = 'Failed'
+        timestamp = '2017-11-08T05:06:41.424Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
+        inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
+        outputs = {
+            'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
+        }
+        labels = {'cromwell-workflow-id': 'cromwell-12345'}
+        std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
+        std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
+        attempts = 1
+        return_code = 0
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            return {
+                'workflowName': workflow_name,
+                'id': workflow_id,
+                'status': status,
+                'calls': { },
+                'inputs': inputs,
+                'labels': labels,
+                'outputs': outputs,
+                'submission': timestamp,
+                'end': timestamp,
+                'start': timestamp,
+                'failures': [
+                    {'causedBy': [],
+                     'message': 'Something failed'}
+                ]
+            }  # yapf: disable
+
+        cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
+        mock_request.get(cromwell_url, json=_request_callback)
+
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
+        self.assertStatus(response, 200)
+        response_data = json.loads(response.data)
+        expected_data = {
+            'name': workflow_name,
+            'id': workflow_id,
+            'status': status,
+            'submission': response_timestamp,
+            'start': response_timestamp,
+            'end': response_timestamp,
+            'inputs': jobs_controller.update_key_names(inputs),
+            'outputs': jobs_controller.update_key_names(outputs),
+            'labels': labels,
+            'extensions':{
+                'tasks': []
+            },
+            'failures': [{
+                'failure': 'Something failed',
+                'taskName': 'Workflow Error'
+            }]
         }  # yapf: disable
         self.assertDictEqual(response_data, expected_data)
 
@@ -445,12 +527,10 @@ class TestJobsController(BaseTestCase):
             'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
         }
         labels = {'cromwell-workflow-id': 'cromwell-12345'}
-        job_id1 = 'operations/abcde'
-        job_id2 = 'operations/dffdf'
         call_root = '/cromwell/cromwell-executions/id/call-analysis'
         std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
         std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
-        attempts = 1
+        attempts = 2
         return_code = 0
 
         def _request_callback(request, context):
@@ -461,7 +541,6 @@ class TestJobsController(BaseTestCase):
                 'status': status,
                 'calls': {
                     'test.analysis': [{
-                        'jobId': job_id1,
                         'executionStatus': 'Failed',
                         'shardIndex': 0,
                         'start': timestamp,
@@ -479,7 +558,6 @@ class TestJobsController(BaseTestCase):
                             }
                         ],
                     },{
-                        'jobId': job_id2,
                         'executionStatus': 'Failed',
                         'shardIndex': 1,
                         'start': timestamp,
@@ -504,23 +582,27 @@ class TestJobsController(BaseTestCase):
                 'submission': timestamp,
                 'end': timestamp,
                 'start': timestamp,
-                'failures': [{
-                    'causedBy': [{
-                        'causedBy': [],
-                        'message': 'test.analysis shard 0 failed'
-                    },{
-                        'causedBy': [],
-                        'message': 'test.analysis shard 1 failed'
-                    }],
-                    'message': 'Workflow failed'
-                }]
+                'failures': [
+                    {
+                        'causedBy': [
+                            {
+                                'causedBy': [],
+                                'message': 'test.analysis shard 0 failed'
+                            },{
+                                'causedBy': [],
+                                'message': 'test.analysis shard 1 failed'
+                            }
+                        ],
+                        'message': 'Workflow failed'
+                    }
+                ]
             }  # yapf: disable
 
         cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
         mock_request.get(cromwell_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}'.format(id=workflow_id), method='GET')
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
         self.assertStatus(response, 200)
         response_data = json.loads(response.data)
         expected_data = {
@@ -552,19 +634,313 @@ class TestJobsController(BaseTestCase):
                 'tasks': [{
                     'name': 'analysis',
                     'executionStatus': 'Failed',
-                    'start': response_timestamp,
-                    'end': response_timestamp,
                     'callRoot': call_root,
                     'callCached': False,
                     'attempts': attempts,
-                    'shardStatuses': [{
-                        'count': 2,
-                        'status': 'Failed'
+                    'start': response_timestamp,
+                    'end': response_timestamp,
+                    'shards': [{
+                        'attempts': attempts,
+                        'end': response_timestamp,
+                        'callRoot': call_root,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'executionStatus': 'Failed',
+                        'failureMessages': ['test.analysis shard 0 failed'],
+                        'shardIndex': 0,
+                        'start': response_timestamp
+                    },{
+                        'attempts': attempts,
+                        'end': response_timestamp,
+                        'callRoot': call_root,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'executionStatus': 'Failed',
+                        'failureMessages': ['test.analysis shard 1 failed'],
+                        'shardIndex': 1,
+                        'start': response_timestamp
                     }]
                 }]
             }
         }  # yapf: disable
         self.assertDictEqual(response_data, expected_data)
+
+    @requests_mock.mock()
+    def test_get_task_attempts_returns_200(self, mock_request):
+        """
+        Test case for get_task_attempts
+
+        Query for task attempts data for a specific non-scattered task
+        """
+        workflow_id = 'id'
+        workflow_name = 'test'
+        task_name = 'test.task'
+        status = 'Failed'
+        timestamp = '2017-11-08T05:06:41.424Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
+        inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
+        outputs = {
+            'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
+        }
+        labels = {'cromwell-workflow-id': 'cromwell-12345'}
+        call_root = '/cromwell/cromwell-executions/id/call-analysis'
+        std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
+        std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
+        return_code = 0
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            return {
+                'workflowName': workflow_name,
+                'id': workflow_id,
+                'status': status,
+                'calls': {
+                    task_name: [{
+                        'executionStatus': 'RetryableFailure',
+                        'shardIndex': -1,
+                        'start': timestamp,
+                        'end': timestamp,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'returnCode': return_code,
+                        'inputs': inputs,
+                        'outputs': outputs,
+                        'attempt': 1,
+                        'callCaching': {
+                            'effectiveCallCachingMode': 'ReadAndWriteCache',
+                            'hit': 'False'
+                        },
+                        'callRoot': call_root
+                    },{
+                        'executionStatus': 'Done',
+                        'shardIndex': -1,
+                        'start': timestamp,
+                        'end': timestamp,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'returnCode': return_code,
+                        'inputs': inputs,
+                        'outputs': outputs,
+                        'attempt': 2,
+                        'callCaching': {
+                            'effectiveCallCachingMode': 'WriteCache',
+                            'hit': 'False'
+                        },
+                        'callRoot': call_root
+                    }]
+                },
+                'inputs': inputs,
+                'labels': labels,
+                'outputs': outputs,
+                'submission': timestamp,
+                'end': timestamp,
+                'start': timestamp,
+                'failures': [
+                    {'causedBy': [
+                        {
+                            'causedBy': [],
+                            'message': 'Task test1:1 failed. The job was stopped before the command finished. PAPI error code 2.'
+                        }
+                    ],
+                        'message': 'Workflow failed'}
+                ]
+            }  # yapf: disable
+
+        cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
+        mock_request.get(cromwell_url, json=_request_callback)
+
+        response = self.client.open('/jobs/{id}/{task}/attempts'.format(
+            id=workflow_id, task=task_name),
+                                    method='GET')
+        self.assertStatus(response, 200)
+        response_data = json.loads(response.data)
+        expected_data = {
+            'attempts': [{
+                'attemptNumber': 1,
+                'callCached': 'False',
+                'callRoot': call_root,
+                'start': response_timestamp,
+                'end': response_timestamp,
+                'executionStatus': 'Failed',
+                'inputs': inputs,
+                'outputs': outputs,
+                'stderr': std_err,
+                'stdout': std_out
+            },{
+                'attemptNumber': 2,
+                'callCached': 'False',
+                'callRoot': call_root,
+                'start': response_timestamp,
+                'end': response_timestamp,
+                'executionStatus': 'Succeeded',
+                'inputs': inputs,
+                'outputs': outputs,
+                'stderr': std_err,
+                'stdout': std_out
+            }]
+        }  # yapf: disable
+        self.assertDictEqual(response_data, expected_data)
+
+    @requests_mock.mock()
+    def test_get_shard_attempts_returns_200(self, mock_request):
+        """
+        Test case for get_shard_attempts
+
+        Query for shard attempts data for a specific scattered task
+        """
+        workflow_id = 'id'
+        workflow_name = 'test'
+        task_name = 'test.task'
+        status = 'Failed'
+        timestamp = '2017-11-08T05:06:41.424Z'
+        response_timestamp = '2017-11-08T05:06:41.424000+00:00'
+        inputs = {'test.inputs': 'gs://project-bucket/test/inputs.txt'}
+        outputs = {
+            'test.analysis.outputs': 'gs://project-bucket/test/outputs.txt'
+        }
+        labels = {'cromwell-workflow-id': 'cromwell-12345'}
+        call_root = '/cromwell/cromwell-executions/id/call-analysis'
+        std_err = '/cromwell/cromwell-executions/id/call-analysis/stderr'
+        std_out = '/cromwell/cromwell-executions/id/call-analysis/stdout'
+        return_code = 0
+
+        def _request_callback(request, context):
+            context.status_code = 200
+            return {
+                'workflowName': workflow_name,
+                'id': workflow_id,
+                'status': status,
+                'calls': {
+                    task_name: [{
+                        'executionStatus': 'RetryableFailure',
+                        'shardIndex': 0,
+                        'start': timestamp,
+                        'end': timestamp,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'returnCode': return_code,
+                        'inputs': inputs,
+                        'outputs': outputs,
+                        'attempt': 1,
+                        'callCaching': {
+                            'effectiveCallCachingMode': 'ReadAndWriteCache',
+                            'hit': 'False'
+                        },
+                        'callRoot': call_root
+                    },{
+                        'executionStatus': 'Done',
+                        'shardIndex': 0,
+                        'start': timestamp,
+                        'end': timestamp,
+                        'stderr': std_err,
+                        'stdout': std_out,
+                        'returnCode': return_code,
+                        'inputs': inputs,
+                        'outputs': outputs,
+                        'attempt': 2,
+                        'callCaching': {
+                            'effectiveCallCachingMode': 'WriteCache',
+                            'hit': 'False'
+                        },
+                        'callRoot': call_root
+                    }]
+                },
+                'inputs': inputs,
+                'labels': labels,
+                'outputs': outputs,
+                'submission': timestamp,
+                'end': timestamp,
+                'start': timestamp,
+                'failures': [
+                    {'causedBy': [
+                        {
+                            'causedBy': [],
+                            'message': 'Task test1:1 failed. The job was stopped before the command finished. PAPI error code 2.'
+                        }
+                    ],
+                        'message': 'Workflow failed'}
+                ]
+            }  # yapf: disable
+
+        cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
+        mock_request.get(cromwell_url, json=_request_callback)
+
+        response = self.client.open(
+            '/jobs/{id}/{task}/{index}/attempts'.format(id=workflow_id,
+                                                        task=task_name,
+                                                        index=0),
+            method='GET')
+        self.assertStatus(response, 200)
+        response_data = json.loads(response.data)
+        expected_data = {
+            'attempts': [{
+                'attemptNumber': 1,
+                'callCached': 'False',
+                'callRoot': call_root,
+                'start': response_timestamp,
+                'end': response_timestamp,
+                'executionStatus': 'Failed',
+                'inputs': inputs,
+                'outputs': outputs,
+                'stderr': std_err,
+                'stdout': std_out
+            },{
+                'attemptNumber': 2,
+                'callCached': 'False',
+                'callRoot': call_root,
+                'start': response_timestamp,
+                'end': response_timestamp,
+                'executionStatus': 'Succeeded',
+                'inputs': inputs,
+                'outputs': outputs,
+                'stderr': std_err,
+                'stdout': std_out
+            }]
+        }  # yapf: disable
+        self.assertDictEqual(response_data, expected_data)
+
+    def test_nested_message_is_returned(self):
+        """
+        Test case for get_deepest_message
+
+        Deepest error message gets returned instead of highest-level message
+        """
+        top_level_message = [{
+            'causedBy': [],
+            'message': 'This is the right message to return'
+        }]
+
+        second_level_message = [{
+            'causedBy': [{
+                'causedBy': [],
+                'message': 'This is the right message to return'
+            }],
+            'message':
+            'Workflow failed'
+        }]
+
+        third_level_message = [{
+            'causedBy': [{
+                'causedBy': [{
+                    'causedBy': [],
+                    'message': 'This is the right message to return'
+                }],
+                'message':
+                'This is the wrong message to return'
+            }],
+            'message':
+            'Workflow failed'
+        }]
+
+        self.assertEqual(
+            'This is the right message to return',
+            jobs_controller.get_deepest_message(top_level_message))
+        self.assertEqual(
+            jobs_controller.get_deepest_message(top_level_message),
+            jobs_controller.get_deepest_message(second_level_message))
+        self.assertEqual(
+            jobs_controller.get_deepest_message(second_level_message),
+            jobs_controller.get_deepest_message(third_level_message))
 
     @requests_mock.mock()
     def test_get_job_bad_request(self, mock_request):
@@ -578,8 +954,8 @@ class TestJobsController(BaseTestCase):
         cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
         mock_request.get(cromwell_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}'.format(id=workflow_id), method='GET')
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
         self.assertStatus(response, 400)
         self.assertEquals(json.loads(response.data)['detail'], error_message)
 
@@ -595,8 +971,8 @@ class TestJobsController(BaseTestCase):
         cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
         mock_request.get(cromwell_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}'.format(id=workflow_id), method='GET')
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
         self.assertStatus(response, 404)
         self.assertEquals(json.loads(response.data)['detail'], error_message)
 
@@ -612,8 +988,8 @@ class TestJobsController(BaseTestCase):
         cromwell_url = self.base_url + '/{id}/metadata'.format(id=workflow_id)
         mock_request.get(cromwell_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/{id}'.format(id=workflow_id), method='GET')
+        response = self.client.open('/jobs/{id}'.format(id=workflow_id),
+                                    method='GET')
         self.assertStatus(response, 500)
         self.assertEquals(json.loads(response.data)['detail'], error_message)
 
@@ -624,7 +1000,6 @@ class TestJobsController(BaseTestCase):
 
         Query jobs by various filter criteria. Returned jobs are ordered from newest to oldest submission time.
         """
-
         def _request_callback(request, context):
             context.status_code = 200
             return {'results': [], 'totalResultsCount': 0}
@@ -633,11 +1008,10 @@ class TestJobsController(BaseTestCase):
         mock_request.post(query_url, json=_request_callback)
 
         query = QueryJobsRequest()
-        response = self.client.open(
-            '/jobs/query',
-            method='POST',
-            data=json.dumps(query),
-            content_type='application/json')
+        response = self.client.open('/jobs/query',
+                                    method='POST',
+                                    data=json.dumps(query),
+                                    content_type='application/json')
         self.assertStatus(response, 200)
 
     def test_empty_cromwell_query_params(self):
@@ -694,8 +1068,8 @@ class TestJobsController(BaseTestCase):
         query_params.extend([{'status': s} for s in query.status])
         self.assertItemsEqual(
             sorted(query_params),
-            sorted(
-                jobs_controller.cromwell_query_params(query, 23, 100, False)))
+            sorted(jobs_controller.cromwell_query_params(
+                query, 23, 100, False)))
 
     def test_format_job(self):
         time = '2017-10-27T18:04:47.271Z'
@@ -707,16 +1081,15 @@ class TestJobsController(BaseTestCase):
             'end': time
         }
         formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
-        result = QueryJobsResult(
-            id=job.get('id'),
-            name=job.get('name'),
-            status=job.get('status'),
-            submission=formatted_time,
-            start=formatted_time,
-            end=formatted_time,
-            extensions=ExtendedFields())
-        self.assertEqual(
-            jobs_controller.format_job(job, formatted_time), result)
+        result = QueryJobsResult(id=job.get('id'),
+                                 name=job.get('name'),
+                                 status=job.get('status'),
+                                 submission=formatted_time,
+                                 start=formatted_time,
+                                 end=formatted_time,
+                                 extensions=ExtendedFields())
+        self.assertEqual(jobs_controller.format_job(job, formatted_time),
+                         result)
 
     def test_format_job_without_milliseconds(self):
         time = '2017-10-27T18:04:47Z'
@@ -728,30 +1101,28 @@ class TestJobsController(BaseTestCase):
             'end': time
         }
         formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
-        result = QueryJobsResult(
-            id=job.get('id'),
-            name=job.get('name'),
-            status=job.get('status'),
-            submission=formatted_time,
-            start=formatted_time,
-            end=formatted_time,
-            extensions=ExtendedFields())
-        self.assertEqual(
-            jobs_controller.format_job(job, formatted_time), result)
+        result = QueryJobsResult(id=job.get('id'),
+                                 name=job.get('name'),
+                                 status=job.get('status'),
+                                 submission=formatted_time,
+                                 start=formatted_time,
+                                 end=formatted_time,
+                                 extensions=ExtendedFields())
+        self.assertEqual(jobs_controller.format_job(job, formatted_time),
+                         result)
 
     def test_format_job_with_no_start_date(self):
         time = '2017-10-27T18:04:47Z'
         job = {'id': '12345', 'name': 'TestJob', 'status': 'Failed'}
         formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
-        result = QueryJobsResult(
-            id=job.get('id'),
-            name=job.get('name'),
-            status=job.get('status'),
-            start=formatted_time,
-            submission=formatted_time,
-            extensions=ExtendedFields())
-        self.assertEqual(
-            jobs_controller.format_job(job, formatted_time), result)
+        result = QueryJobsResult(id=job.get('id'),
+                                 name=job.get('name'),
+                                 status=job.get('status'),
+                                 start=formatted_time,
+                                 submission=formatted_time,
+                                 extensions=ExtendedFields())
+        self.assertEqual(jobs_controller.format_job(job, formatted_time),
+                         result)
 
     def test_format_job_with_no_end_date(self):
         time = '2017-10-27T18:04:47Z'
@@ -762,16 +1133,15 @@ class TestJobsController(BaseTestCase):
             'start': time
         }
         formatted_time = dateutil.parser.parse(time).astimezone(tzutc())
-        result = QueryJobsResult(
-            id=job.get('id'),
-            name=job.get('name'),
-            status=job.get('status'),
-            submission=formatted_time,
-            start=formatted_time,
-            end=None,
-            extensions=ExtendedFields())
-        self.assertEqual(
-            jobs_controller.format_job(job, formatted_time), result)
+        result = QueryJobsResult(id=job.get('id'),
+                                 name=job.get('name'),
+                                 status=job.get('status'),
+                                 submission=formatted_time,
+                                 start=formatted_time,
+                                 end=None,
+                                 extensions=ExtendedFields())
+        self.assertEqual(jobs_controller.format_job(job, formatted_time),
+                         result)
 
     def test_page_from_offset(self):
         self.assertEqual(

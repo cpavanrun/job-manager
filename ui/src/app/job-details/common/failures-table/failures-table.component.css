@@ -1,9 +1,18 @@
-* {
-  font-family: 'Roboto', sans-serif;
+mat-table {
+  margin-top: 1.25rem;
+  display: table;
+  width: 99%;
+  border-radius: 0.3125rem;
+  border: 1px solid #CCCFD4;
+  box-shadow: 0 0 2px 0 rgba(0,0,0,0.12), 0 3px 2px 0 rgba(0,0,0,0.12);
 }
 
-mat-table {
+:host-context(mat-card.card) mat-table {
+  border: none;
+  box-shadow: none;
+  border-radius: unset;
   width: 100%;
+  margin-top: 0;
 }
 
 .mat-header-row,
@@ -14,25 +23,28 @@ mat-table {
 
 td,
 th {
-  padding: 5px 15px 5px 0px;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   line-height: 1rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-  height: 1rem;
   display: table-cell;
 }
 
 th {
-  color: #999;
-  font-weight: normal;
-  padding-top: 1rem;
+  background-color: #F1F4F7;
+  color: #333F52;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+}
+
+td {
+  padding: 1rem;
 }
 
 th.failure-task,
 td.failure-task {
-  min-width: 150px;
-  max-width: 300px;
+  min-width: 9.375rem;
+  max-width: 18.75rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -40,44 +52,22 @@ td.failure-task {
 
 th.failure-message,
 td.failure-message {
-  width: 100%;
+  line-height: 1.25rem;
+  word-wrap: break-word;
 }
 
 th.failure-links,
 td.failure-links {
-  min-width: 79px;
-  padding-right: 0px;
-}
-
-clr-tooltip-content {
-  background-color: rgba(0, 0, 0, 0.65);
-  padding: 0.25rem 0.5rem;
-  font-size: 0.65rem;
-  line-height: 0.65rem;
-  color: #fff;
-  display: block;
-  margin: -0.6rem 0.5rem 0 1rem;
-  height: auto;
-  z-index: 100;
-}
-
-clr-tooltip-content.message {
-  max-width: 20rem;
-  font-size: 0.8rem;
-  line-height: 1.25rem;
-  background-color: rgba(0, 0, 0, 0.85);
-  z-index: 100;
-  margin-top: -1rem;
+  min-width: 11.875em;
 }
 
 .log-item {
-  color: black;
   cursor: pointer;
   text-decoration: none;
 }
 
-.failure-links clr-icon:last-child {
-  margin-right: 0;
+.failure-links clr-icon {
+  margin: 0;
 }
 
 :host-context(mat-card.card) .mat-header-row {
@@ -86,19 +76,40 @@ clr-tooltip-content.message {
 
 :host-context(mat-card.card) td,
 :host-context(mat-card.card) th {
-  padding: 5px 10px 5px 0px;
+  padding: 0.3125rem 0.625rem 0.3125rem 0;
+  line-height: 0.7rem;
 }
 
 :host-context(mat-card.card) .mat-row:last-child td {
   border-bottom: none;
 }
 
-:host-context(mat-card.card) .failure-task {
-  width: 174px;
-  max-width: 174px;
+:host-context(mat-card.card) td.failure-task {
+  min-width: 6.25rem;
+  max-width: 6.25rem;
+  font-size: 0.7rem;
 }
 
 :host-context(mat-card.card) td.failure-links {
-  min-width: 107px;
+  min-width: 10rem;
   padding-right: 0px;
+}
+
+clr-tooltip-content {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.65rem;
+  line-height: 0.65rem;
+  color: #fff;
+  display: block;
+  margin: -0.6rem 0.5rem 0 0;
+  height: auto;
+}
+
+.title-link {
+  color: black;
+}
+
+a.title-link {
+  text-decoration: underline;
+  cursor: pointer;
 }

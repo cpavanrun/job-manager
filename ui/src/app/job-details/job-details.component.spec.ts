@@ -6,10 +6,13 @@ import {Component, DebugElement} from '@angular/core';
 import {
   MatButtonModule,
   MatCardModule,
+  MatDialogModule,
   MatDividerModule,
   MatExpansionModule,
+  MatIconModule,
   MatListModule,
   MatMenuModule,
+  MatSnackBar,
   MatTableModule,
   MatTabsModule,
   MatTooltipModule,
@@ -18,6 +21,7 @@ import {RouterTestingModule} from '@angular/router/testing';
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
 import {Ng2GoogleChartsModule} from 'ng2-google-charts';
 
+import {JobDebugIconsComponent} from "./common/debug-icons/debug-icons.component";
 import {JobDetailsComponent} from "./job-details.component"
 import {JobPanelsComponent} from './panels/panels.component';
 import {JobResourcesComponent} from './resources/resources.component';
@@ -33,6 +37,12 @@ import {JobStatus} from "../shared/model/JobStatus";
 import {JobMetadataResponse} from '../shared/model/JobMetadataResponse';
 import {JobFailuresTableComponent} from "./common/failures-table/failures-table.component";
 import {JobTimingDiagramComponent} from "./tabs/timing-diagram/timing-diagram.component";
+import {JobScatteredAttemptsComponent} from "./tabs/scattered-attempts/scattered-attempts.component";
+import {JobAttemptComponent} from "./common/attempt/attempt.component";
+import {FakeCapabilitiesService} from "../testing/fake-capabilities.service";
+import {SettingsService} from "../core/settings.service";
+import {AuthService} from "../core/auth.service";
+import {CapabilitiesService} from "../core/capabilities.service";
 
 describe('JobDetailsComponent', () => {
 
@@ -54,11 +64,17 @@ describe('JobDetailsComponent', () => {
 
   beforeEach(async(() => {
     fakeJobService = new FakeJobManagerService([testJob()]);
+    let fakeCapabilitiesService: FakeCapabilitiesService = new FakeCapabilitiesService({});
+    let authService = new AuthService(null, fakeCapabilitiesService, null, null);
+    let settingsService: SettingsService = new SettingsService(authService, fakeCapabilitiesService, localStorage);
+
     TestBed.configureTestingModule({
       declarations: [
         AppComponent,
         FakeJobListComponent,
         TestJobDetailsComponent,
+        JobAttemptComponent,
+        JobDebugIconsComponent,
         JobDetailsComponent,
         JobFailuresTableComponent,
         JobPanelsComponent,
@@ -66,6 +82,7 @@ describe('JobDetailsComponent', () => {
         JobResourcesTableComponent,
         JobTabsComponent,
         JobTimingDiagramComponent,
+        JobScatteredAttemptsComponent,
       ],
       imports: [
         ClrIconModule,
@@ -73,8 +90,10 @@ describe('JobDetailsComponent', () => {
         CommonModule,
         MatButtonModule,
         MatCardModule,
+        MatDialogModule,
         MatDividerModule,
         MatExpansionModule,
+        MatIconModule,
         MatListModule,
         MatMenuModule,
         MatTableModule,
@@ -94,6 +113,10 @@ describe('JobDetailsComponent', () => {
       ],
       providers: [
         {provide: JobManagerService, useValue: fakeJobService},
+        {provide: SettingsService, useValue: settingsService},
+        {provide: CapabilitiesService, useValue: fakeCapabilitiesService},
+        {provide: AuthService, useValue: authService},
+        {provide: MatSnackBar},
         JobDetailsResolver
       ],
     }).compileComponents();
@@ -115,7 +138,7 @@ describe('JobDetailsComponent', () => {
 
   it('renders details', fakeAsync(() => {
     const de: DebugElement = fixture.debugElement;
-    expect(de.query(By.css('.job-id')).nativeElement.textContent).toContain(jobId);
+    expect(de.query(By.css('#job-id')).nativeElement.value).toContain(jobId);
   }));
 
   it('navigates to jobs table on close', fakeAsync(() => {

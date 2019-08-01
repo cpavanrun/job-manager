@@ -5,6 +5,11 @@ import {JobMetadataResponse} from '../shared/model/JobMetadataResponse';
 import {TaskMetadata} from '../shared/model/TaskMetadata';
 import {JobTabsComponent} from "./tabs/tabs.component";
 import {JobPanelsComponent} from "./panels/panels.component";
+import {SettingsService} from "../core/settings.service";
+import {URLSearchParamsUtils} from "../shared/utils/url-search-params.utils";
+import {CapabilitiesService} from "../core/capabilities.service";
+import {CapabilitiesResponse} from "../shared/model/CapabilitiesResponse";
+import {objectNotEmpty} from '../shared/common';
 
 @Component({
   selector: 'jm-job-details',
@@ -16,17 +21,36 @@ export class JobDetailsComponent implements OnInit {
   @ViewChild(JobPanelsComponent) jobPanels;
   public job: JobMetadataResponse;
 
+  projectId: string;
+  primaryLabels: string[] = [];
+  private readonly capabilities: CapabilitiesResponse;
+
   constructor(
     private readonly router: Router,
-    private readonly route: ActivatedRoute
-  ) {}
+    private readonly route: ActivatedRoute,
+    private readonly settingsService: SettingsService,
+    private readonly capabilitiesService: CapabilitiesService) {
+    this.capabilities = capabilitiesService.getCapabilitiesSynchronous();
+  }
 
   ngOnInit(): void {
     this.job = this.route.snapshot.data['job'];
+    const req = URLSearchParamsUtils.unpackURLSearchParams(this.route.snapshot.queryParams['q']);
+    this.projectId = req.extensions.projectId || '';
+
+    // if the user has saved settings for display columns, use that
+    // otherwise, go with default list from capabilities
+    if (this.settingsService.getSavedSettingValue('displayColumns', this.projectId)) {
+      this.primaryLabels = this.settingsService.getSavedSettingValue('displayColumns', this.projectId).filter(field => field.match('labels.')).map(field => field.replace('labels.',''));
+    } else if (this.capabilities.displayFields) {
+      this.primaryLabels = this.capabilities.displayFields.map((df) => df.field).filter(field => field.match('labels.')).map(field => field.replace('labels.',''));
+    } else if (this.job.labels) {
+      this.primaryLabels = Object.keys(this.job.labels);
+    }
   }
 
   hasTabs(): boolean {
-    if (( this.job.inputs && Object.keys(this.job.inputs).length !== 0) || (this.job.outputs  && Object.keys(this.job.outputs).length !== 0)) {
+    if (objectNotEmpty(this.job.inputs) || objectNotEmpty(this.job.outputs) || objectNotEmpty(this.job.failures)) {
        return true;
     }
     if (this.job.extensions) {
@@ -71,6 +95,10 @@ export class JobDetailsComponent implements OnInit {
     });
   }
 
+  hasResources(): boolean {
+    return (this.job.extensions && (this.job.extensions.sourceFile || this.job.extensions.logs));
+  }
+
   private handleNav() {
     this.job = this.route.snapshot.data['job'];
     this.jobPanels.job = this.job;
@@ -84,9 +112,5 @@ export class JobDetailsComponent implements OnInit {
     if (this.job.extensions.tasks) {
       this.taskTabs.timingDiagram.buildTimelineData(this.job.extensions.tasks);
     }
-  }
-
-  hasResources(): boolean {
-    return (this.job.extensions && (this.job.extensions.sourceFile || this.job.extensions.logs));
   }
 }

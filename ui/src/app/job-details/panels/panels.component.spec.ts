@@ -6,9 +6,11 @@ import {
   MatButtonModule,
   MatCardModule,
   MatGridListModule,
+  MatIconModule,
   MatMenuModule,
+  MatSnackBar,
   MatTabsModule,
-  MatTableModule
+  MatTableModule,
 } from '@angular/material';
 import {ClrIconModule, ClrTooltipModule} from '@clr/angular';
 import {SharedModule} from '../../shared/shared.module';
@@ -16,6 +18,9 @@ import {JobStatus} from '../../shared/model/JobStatus';
 import {JobMetadataResponse} from '../../shared/model/JobMetadataResponse';
 import {JobPanelsComponent} from './panels.component';
 import {JobFailuresTableComponent} from "../common/failures-table/failures-table.component";
+import {JobDebugIconsComponent} from "../common/debug-icons/debug-icons.component";
+import {JobManagerService} from "../../core/job-manager.service";
+import {FakeJobManagerService} from "../../testing/fake-job-manager.service";
 
 describe('JobPanelsComponent', () => {
 
@@ -42,10 +47,12 @@ describe('JobPanelsComponent', () => {
         statusDetail: 'success',
       }
     };
+  let fakeJobService = new FakeJobManagerService([minimalJob, completeJob]);
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
+        JobDebugIconsComponent,
         JobFailuresTableComponent,
         JobPanelsComponent,
         TestPanelsComponent
@@ -57,11 +64,16 @@ describe('JobPanelsComponent', () => {
         MatButtonModule,
         MatCardModule,
         MatGridListModule,
+        MatIconModule,
         MatMenuModule,
         MatTabsModule,
         MatTableModule,
         SharedModule
       ],
+      providers: [
+        {provide: JobManagerService, useValue: fakeJobService},
+        {provide: MatSnackBar},
+      ]
     }).compileComponents();
   }));
 
@@ -76,7 +88,7 @@ describe('JobPanelsComponent', () => {
     let de: DebugElement = fixture.debugElement;
     expect(de.queryAll(By.css('.card')).length).toEqual(1);
     expect(de.query(By.css('.header')).nativeElement.textContent).toEqual('');
-    expect(de.query(By.css('.job-id')).nativeElement.textContent)
+    expect(de.query(By.css('#job-id')).nativeElement.value)
       .toContain(minimalJob.id);
   }));
 
@@ -98,7 +110,7 @@ describe('JobPanelsComponent', () => {
 
   @Component({
     selector: 'jm-test-panels-component',
-    template: `<jm-panels [job]="job"></jm-panels>`
+    template: `<jm-panels [job]="job" [primaryLabels]="['label1', 'label2']"></jm-panels>`
   })
   class TestPanelsComponent {
     public job: JobMetadataResponse = {

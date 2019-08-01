@@ -1,0 +1,53 @@
+  <clr-tooltip *ngIf="displayMessage">
+    <a class="log-item">
+      <clr-icon clrTooltipTrigger shape="exclamation-triangle" style="color:#DB3214"></clr-icon>
+      <clr-tooltip-content clrPosition="left" clrSize="xs" class="message" *clrIfOpen>
+        <span>{{ message }}</span>
+      </clr-tooltip-content>
+    </a>
+  </clr-tooltip>
+ <clr-icon *ngIf="!getResourceUrl(stdout)" shape="file" class="disabled"></clr-icon>
+  <clr-tooltip *ngIf="getResourceUrl(stdout)">
+    <button class="log-item" (click)="showOrLinkTo($event, stdout)">
+      <clr-icon clrTooltipTrigger shape="file"></clr-icon>
+      <clr-tooltip-content clrPosition="top-left" clrSize="xs" *clrIfOpen>
+        <span>stdout log</span>
+      </clr-tooltip-content>
+    </button>
+  </clr-tooltip>
+  <clr-icon *ngIf="!getResourceUrl(stderr)" shape="file" class="has-alert log-error disabled"></clr-icon>
+  <clr-tooltip *ngIf="getResourceUrl(stderr)">
+    <button class="log-item" (click)="showOrLinkTo($event, stderr)">
+      <clr-icon clrTooltipTrigger shape="file" class="has-alert log-error"></clr-icon>
+      <clr-tooltip-content clrPosition="top-left" clrSize="xs" *clrIfOpen>
+        <span>stderr log</span>
+      </clr-tooltip-content>
+    </button>
+  </clr-tooltip>
+  <mat-icon *ngIf="!getResourceUrl(backendLog)" svgIcon="cloud-file" class="disabled"></mat-icon>
+  <clr-tooltip *ngIf="getResourceUrl(backendLog)">
+    <button class="log-item" (click)="showOrLinkTo($event, backendLog)">
+      <mat-icon clrTooltipTrigger svgIcon="cloud-file"></mat-icon>
+      <clr-tooltip-content clrPosition="top-left" clrSize="xs" *clrIfOpen>
+        <span>backend log</span>
+      </clr-tooltip-content>
+    </button>
+  </clr-tooltip>
+  <clr-icon *ngIf="!getDirectoryUrl(directory)" shape="folder" class="is-solid disabled"></clr-icon>
+  <clr-tooltip *ngIf="getDirectoryUrl(directory)">
+    <a class="log-item" [href]="getDirectoryUrl(directory)" target="_blank" (click)="$event.stopPropagation()">
+      <clr-icon clrTooltipTrigger shape="folder" class="is-solid"></clr-icon>
+      <clr-tooltip-content clrPosition="top-left" clrSize="xs" *clrIfOpen>
+        <span>execution directory</span>
+      </clr-tooltip-content>
+    </a>
+  </clr-tooltip>
+  <clr-tooltip *ngIf="!!hasOperationalDetails()">
+    <button class="log-item" (click)="showOperationDetails($event)">
+      <clr-icon clrTooltipTrigger shape="info-standard"></clr-icon>
+      <clr-tooltip-content clrPosition="top-left" clrSize="xs" *clrIfOpen>
+        <span>compute details</span>
+      </clr-tooltip-content>
+    </button>
+  </clr-tooltip>
+

@@ -6,6 +6,7 @@ from . import BaseTestCase
 
 from jobs.controllers.utils import task_statuses
 from jobs.controllers import jobs_controller
+from jobs.models.shard import Shard
 
 import itertools
 
@@ -22,7 +23,7 @@ class TestTaskStatuses(BaseTestCase):
         self.assertEqual(task_statuses.cromwell_execution_to_api('Unstartable'), 'Failed')
         self.assertEqual(task_statuses.cromwell_execution_to_api('Aborted'), 'Aborted')
         self.assertEqual(task_statuses.cromwell_execution_to_api('Bypassed'), 'Submitted')
-        self.assertEqual(task_statuses.cromwell_execution_to_api('RetryableFailure'), 'Running')
+        self.assertEqual(task_statuses.cromwell_execution_to_api('RetryableFailure'), 'Failed')
         self.assertEqual(task_statuses.cromwell_execution_to_api('Failed'), 'Failed')
         self.assertEqual(task_statuses.cromwell_execution_to_api('Done'), 'Succeeded')
     # yapf: enable
@@ -33,36 +34,27 @@ class TestTaskStatuses(BaseTestCase):
 
     def test_scattered_task_status(self):
         def failed_scattered_task():
-            return [{
-                'executionStatus': 'Failed',
-            }, {
-                'executionStatus': 'Aborting',
-            }, {
-                'executionStatus': 'Aborted',
-            }, {
-                'executionStatus': 'Running',
-            }, {
-                'executionStatus': 'Starting',
-            }, {
-                'executionStatus': 'Done',
-            }]
+            return [
+                Shard(execution_status='Failed'),
+                Shard(execution_status='Aborting'),
+                Shard(execution_status='Aborted'),
+                Shard(execution_status='Running'),
+                Shard(execution_status='Submitted'),
+                Shard(execution_status='Succeeded')
+            ]
 
         for response in itertools.permutations(failed_scattered_task(), 6):
             self.assertEqual(
                 jobs_controller._get_scattered_task_status(response), 'Failed')
 
         def aborting_scattered_task():
-            return [{
-                'executionStatus': 'Aborting',
-            }, {
-                'executionStatus': 'Aborted',
-            }, {
-                'executionStatus': 'Running',
-            }, {
-                'executionStatus': 'Starting',
-            }, {
-                'executionStatus': 'Done',
-            }]
+            return [
+                Shard(execution_status='Aborting'),
+                Shard(execution_status='Aborted'),
+                Shard(execution_status='Running'),
+                Shard(execution_status='Submitted'),
+                Shard(execution_status='Succeeded')
+            ]
 
         for response in itertools.permutations(aborting_scattered_task(), 5):
             self.assertEqual(
@@ -70,15 +62,12 @@ class TestTaskStatuses(BaseTestCase):
                 'Aborting')
 
         def aborted_scattered_task():
-            return [{
-                'executionStatus': 'Aborted',
-            }, {
-                'executionStatus': 'Running',
-            }, {
-                'executionStatus': 'Starting',
-            }, {
-                'executionStatus': 'Done',
-            }]
+            return [
+                Shard(execution_status='Aborted'),
+                Shard(execution_status='Running'),
+                Shard(execution_status='Submitted'),
+                Shard(execution_status='Succeeded')
+            ]
 
         for response in itertools.permutations(aborted_scattered_task(), 4):
             self.assertEqual(
@@ -86,13 +75,11 @@ class TestTaskStatuses(BaseTestCase):
                 'Aborted')
 
         def running_scattered_task():
-            return [{
-                'executionStatus': 'Running',
-            }, {
-                'executionStatus': 'Starting',
-            }, {
-                'executionStatus': 'Done',
-            }]
+            return [
+                Shard(execution_status='Running'),
+                Shard(execution_status='Submitted'),
+                Shard(execution_status='Succeeded')
+            ]
 
         for response in itertools.permutations(running_scattered_task(), 3):
             self.assertEqual(
@@ -100,11 +87,10 @@ class TestTaskStatuses(BaseTestCase):
                 'Running')
 
         def submitted_scattered_task():
-            return [{
-                'executionStatus': 'Starting',
-            }, {
-                'executionStatus': 'Done',
-            }]
+            return [
+                Shard(execution_status='Submitted'),
+                Shard(execution_status='Succeeded')
+            ]
 
         for response in itertools.permutations(submitted_scattered_task(), 2):
             self.assertEqual(

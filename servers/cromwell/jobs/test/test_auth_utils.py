@@ -15,7 +15,8 @@ class TestAuthUtils(BaseTestCase):
             'cromwell_url': self.base_url,
             'cromwell_user': '',
             'cromwell_password': '',
-            'use_caas': True
+            'use_caas': True,
+            'capabilities': {}
         })
 
         def _request_callback(request, context):
@@ -25,12 +26,11 @@ class TestAuthUtils(BaseTestCase):
         query_url = self.base_url + '/query'
         mock_request.post(query_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/query',
-            method='POST',
-            headers={'Authentication': 'Bearer 12345'},
-            data={},
-            content_type='application/json')
+        response = self.client.open('/jobs/query',
+                                    method='POST',
+                                    headers={'Authentication': 'Bearer 12345'},
+                                    data={},
+                                    content_type='application/json')
         self.assertStatus(response, 200)
 
     @requests_mock.mock()
@@ -39,7 +39,8 @@ class TestAuthUtils(BaseTestCase):
             'cromwell_url': self.base_url,
             'cromwell_user': 'user',
             'cromwell_password': 'password',
-            'use_caas': False
+            'use_caas': False,
+            'capabilities': {}
         })
 
         def _request_callback(request, context):
@@ -49,11 +50,10 @@ class TestAuthUtils(BaseTestCase):
         query_url = self.base_url + '/query'
         mock_request.post(query_url, json=_request_callback)
 
-        response = self.client.open(
-            '/jobs/query',
-            method='POST',
-            data={},
-            content_type='application/json')
+        response = self.client.open('/jobs/query',
+                                    method='POST',
+                                    data={},
+                                    content_type='application/json')
         self.assertStatus(response, 200)
 
     def test_no_auth_with_caas_returns_401(self):
@@ -61,13 +61,13 @@ class TestAuthUtils(BaseTestCase):
             'cromwell_url': self.base_url,
             'cromwell_user': '',
             'cromwell_password': '',
-            'use_caas': True
+            'use_caas': True,
+            'capabilities': {}
         })
-        response = self.client.open(
-            '/jobs/query',
-            method='POST',
-            data={},
-            content_type='application/json')
+        response = self.client.open('/jobs/query',
+                                    method='POST',
+                                    data={},
+                                    content_type='application/json')
         self.assertStatus(response, 401)
 
 

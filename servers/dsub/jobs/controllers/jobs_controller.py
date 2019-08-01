@@ -47,10 +47,10 @@ def abort_job(id):
 
     # TODO(https://github.com/googlegenomics/dsub/issues/92): Remove this
     # hacky re-routing of stdout once dsub removes it from the python API
-    deleted = execute_redirect_stdout(lambda: ddel.ddel_tasks(
-        provider=provider,
-        job_ids={job_id},
-        task_ids={task_id} if task_id else None))
+    deleted = execute_redirect_stdout(
+        lambda: ddel.ddel_tasks(provider=provider,
+                                job_ids={job_id},
+                                task_ids={task_id} if task_id else None))
     if len(deleted) != 1:
         raise InternalServerError('Failed to abort dsub job')
 
@@ -65,7 +65,7 @@ def update_job_labels(id, body):
     Returns:
         UpdateJobLabelsResponse: Response - never actually returned
     """
-    raise NotImplemented('Label updates not supported by dsub.')
+    raise NotImplementedError('Label updates not supported by dsub.')
 
 
 def resume_job(id):
@@ -186,6 +186,47 @@ def health():
     return HealthResponse(available=True)
 
 
+def get_shard_attempts(id, task, index, **kwargs):
+    """
+    Query for attempt metadata for a specified job task shard
+
+    :param id: Job ID
+    :type id: str
+
+    :param task: Task Name
+    :type task: str
+
+    :param index: Shard Index
+    :type index: str
+
+    :rtype: JobAttemptsResponse - never actually returned
+    """
+    raise NotImplementedError('Tasks not supported by dsub.')
+
+
+def get_task_attempts(id, task, **kwargs):
+    """
+    Query for attempt metadata for a specified job task
+
+    :param id: Job ID
+    :type id: str
+
+    :param task: Task Name
+    :type task: str
+
+    :rtype: JobAttemptsResponse - never actually returned
+    """
+    raise NotImplementedError('Tasks not supported by dsub.')
+
+
+def get_operation_details(job, operation, **kwargs):
+    """
+    Placeholder for query for operation details from Google Pipelines API
+
+    """
+    raise NotImplementedError('Operation details not supported by dsub.')
+
+
 def _handle_http_error(error, proj_id):
     # TODO(https://github.com/googlegenomics/dsub/issues/79): Push this
     # provider-specific error translation down into dstat.
@@ -197,18 +238,17 @@ def _handle_http_error(error, proj_id):
 
 
 def _metadata_response(id, job):
-    return JobMetadataResponse(
-        id=id,
-        status=job_statuses.dsub_to_api(job),
-        submission=job['create-time'],
-        name=job['job-name'],
-        start=job.get('start-time'),
-        end=job['end-time'],
-        inputs=job['inputs'],
-        outputs=job['outputs'],
-        labels=labels.dsub_to_api(job),
-        failures=failures.get_failures(job),
-        extensions=extensions.get_extensions(job))
+    return JobMetadataResponse(id=id,
+                               status=job_statuses.dsub_to_api(job),
+                               submission=job['create-time'],
+                               name=job['job-name'],
+                               start=job.get('start-time'),
+                               end=job['end-time'],
+                               inputs=job['inputs'],
+                               outputs=job['outputs'],
+                               labels=labels.dsub_to_api(job),
+                               failures=failures.get_failures(job),
+                               extensions=extensions.get_extensions(job))
 
 
 def _auth_token():
